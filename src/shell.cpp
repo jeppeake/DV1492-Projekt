@@ -37,7 +37,7 @@ int main(void) {
             switch(cIndex) {
 
 			case 0: //quit
-				bRun = quit();                
+				bRun = quit();
                 break;
             case 1: // format
                 break;
