@@ -24,6 +24,8 @@ int main(void) {
 	std::string user = "user@DV1492";    // Change this if you want another user to be displayed
 	std::string currentDir = "/";    // current directory, used for output
 
+  FileSystem * FS = 0;
+
     bool bRun = true;
 
     do {
@@ -40,6 +42,12 @@ int main(void) {
 				bRun = quit();
                 break;
             case 1: // format
+                std::cout << "Formatting operation starting" << std::endl;
+                if(FS != 0){
+                  delete FS;
+                  std::cout << "Old system deleted" << std::endl;
+                }
+                FS = new FileSystem();
                 break;
             case 2: // ls
                 std::cout << "Listing directory" << std::endl;
