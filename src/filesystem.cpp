@@ -15,6 +15,9 @@ void FileSystem::createFile(){
 
 void FileSystem::createFolderi(int parent, int id, int block, std::string name){
   std::vector<char> vec;
+  
+  directory_header dir(parent,id,block,name);
+
   mMemblockDevice.writeBlock(block, vec);
 }
 

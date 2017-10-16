@@ -21,8 +21,10 @@ std::string help();
 int main(void) {
 
 	std::string userCommand, commandArr[MAXCOMMANDS];
-	std::string user = "user@DV1492";    // Change this if you want another user to be displayed
+	std::string user = "Operator";    // Change this if you want another user to be displayed
 	std::string currentDir = "/";    // current directory, used for output
+
+  int currBlock = 0;
 
   FileSystem * FS = 0;
 
