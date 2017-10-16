@@ -89,12 +89,16 @@ private:
         appendString(data, name);
       }
 
-      std::vector<char> unpackHeader(std::vector<char>& vec){
-        type = vec.at(0);
-        parent = extractInt(vec,1);
-        block = extractInt(vec,5);
-        name = extractString(vec, extractInt(vec, 9), 13);
+      void unpackHeader(std::vector<char>& vec){
+        type = vec.at(reader); reader++;
+        parent = extractInt(vec,reader); reader+=4;
+        block = extractInt(vec,5); reader+=4;
+
+        int length = extractInt(vec, 9); reader += 4;
+        name = extractString(vec, length, 13); reader += length;
       }
+
+      virtual void unpack() = 0;
 
       std::string printHeaderData(){
         std::stringstream ss;
@@ -109,6 +113,8 @@ private:
 
       std::vector<char> data;
 
+      int reader = 0;
+
       char type;
       int parent;
       int block;
@@ -120,17 +126,35 @@ private:
     public:
       directory_header(int parent, int block, std::string name) : header(DIRECTORY, parent, block, name){
         //creator
+        if(parent == block){
+          //root
+        }
       }
 
       directory_header(Block block) : header(block){
         //reader
+        unpack();
       }
 
       void pack(std::vector<char> &vec){
         packHeader();
         //pack all files/subfolders here
+        for(int i = 0;i < children.size(); i++){
+          data.push_back(children.at(i));
+        }
+
         vec = data;
       }
+
+      void unpack(){
+
+      }
+
+      void addChild(char block){
+        children.push_back(block);
+      }
+
+      std::vector<char> children;
     };
 
 public:

@@ -2,7 +2,7 @@
 
 FileSystem::FileSystem() {
   createFolderi(0, "root");
-  createFile(1, allocator);
+  //createFile(1, "allocator"); proposition: allocator file will describe the file system, to make it easier to find unused space
   std::cout << "New filesystem created" << std::endl;
 
   directory_header dir(mMemblockDevice.readBlock(42));
@@ -18,7 +18,7 @@ void FileSystem::createFile(){
 
 void FileSystem::createFolderi(int parent, std::string name){
 
-  //call allocation file to find empty space
+  //call allocation file to find empty space?
 
   int block = 0;
 
