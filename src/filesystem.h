@@ -12,26 +12,41 @@ private:
     // Here you can add your own data structures
 
     template<typename T>
-    char* binary_begin(T &obj){
+    static char* binary_begin(T &obj){
       return reinterpret_cast<char*>(&obj);
     }
 
     template<typename T>
-    char* binary_end(T &obj){
+    static char* binary_end(T &obj){
       return binary_begin(obj) + sizeof(obj);
     }
 
-    std::vector<char>& appendInt(std::vector<char>& vec, int i){
+    static void appendInt(std::vector<char>& vec, int i){
       std::copy(binary_begin(i),binary_end(i),back_inserter(vec));
-      return vec;
     }
 
-    int extractInt(std::vector<char>& vec, int pos){
+    static int extractInt(std::vector<char>& vec, int pos){
       char bytes[4];
       for(int i = 0; i < 4; i++){
         bytes[i] = vec.at(i + pos);
       }
       return *((int*)bytes);
+    }
+
+    static void appendString(std::vector<char>& vec, std::string s){
+      //appendInt(vec, s.length());
+      std::copy(s.begin(), s.end(), back_inserter(vec));
+    }
+
+    static std::string extractString(std::vector<char>& vec, int length, int pos){
+      char* bytes = new char[length + 1];
+      for(int i = 0; i < length; i++){
+        bytes[i] = vec.at(i + pos);
+      }
+      bytes[length] = '\0';
+      std::string ret = bytes;
+      delete[] bytes;
+      return ret;
     }
 
     struct header{
@@ -42,29 +57,50 @@ private:
 
     public:
 
-      header(char type, int parent, int id, int block, std::string name){
+      header(char type, int parent, int block, std::string name){
         this->type = type;
         this->parent = parent;
-        this->id = id;
         this->block = block;
         this->name = name;
 
         std::cout << printHeaderData() << std::endl;
       }
 
-      virtual void pack() = 0;
+      header(Block block){
+        //std::cout << block.size() << std::endl;
+        for(int i=0; i < block.size(); i++){
+          //std::cout << i << " : " << (int)block[i] << std::endl;
+          data.push_back(block[i]);
+        }
+        //data = block
+        unpackHeader(data);
 
-      void packHeader(std::vector<char> &vec){
-        vec.push_back(type);
+        std::cout << printHeaderData() << std::endl;
+      }
 
+      virtual void pack(std::vector<char> &vec) = 0;
+
+      void packHeader(){
+        data.push_back(type);
+        appendInt(data, parent);
+        appendInt(data, block);
+
+        appendInt(data, name.length());
+        appendString(data, name);
+      }
+
+      std::vector<char> unpackHeader(std::vector<char>& vec){
+        type = vec.at(0);
+        parent = extractInt(vec,1);
+        block = extractInt(vec,5);
+        name = extractString(vec, extractInt(vec, 9), 13);
       }
 
       std::string printHeaderData(){
         std::stringstream ss;
 
-        ss << "Type: " << (int)type
+        ss << "Type: " << (TYPE)type
         << "\nParent: " << parent
-        << "\nId: " << id
         << "\nBlock: " << block
         << "\nName: " << name;
 
@@ -75,7 +111,6 @@ private:
 
       char type;
       int parent;
-      int id;
       int block;
       std::string name;
 
@@ -83,11 +118,18 @@ private:
 
     struct directory_header : public header{
     public:
-      directory_header(int parent, int id, int block, std::string name) : header(DIRECTORY, parent, id, block,  name){
-
+      directory_header(int parent, int block, std::string name) : header(DIRECTORY, parent, block, name){
+        //creator
       }
-      void pack(){
 
+      directory_header(Block block) : header(block){
+        //reader
+      }
+
+      void pack(std::vector<char> &vec){
+        packHeader();
+        //pack all files/subfolders here
+        vec = data;
       }
     };
 
@@ -105,7 +147,7 @@ public:
     void createFile();
 
     /* Creates a folder in the filesystem */
-    void createFolderi(int parent, int id, int block, std::string name);
+    void createFolderi(int parent, std::string name);
 
     /* Removes a file in the filesystem */
     void removeFile();
