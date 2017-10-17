@@ -13,8 +13,8 @@ FileSystem::FileSystem() {
     std::cout << "Child: " << i << " : " << (int)dir.children.at(i) << std::endl;
   }*/
   directory_header dir2(mMemblockDevice.readBlock(2));
-  std::cout << getLocation(2) << std::endl;
-  std::cout << listDir(0) << std::endl;
+  //std::cout << getLocation(2) << std::endl;
+  //std::cout << listDir(0) << std::endl;
 }
 
 FileSystem::~FileSystem() {
@@ -88,8 +88,28 @@ void FileSystem::removeFolder(){
 
 }
 
-void FileSystem::goToFolder(){
+int FileSystem::goToFolder(std::string name, int currBlock){
 
+
+
+  Block block = mMemblockDevice.readBlock(currBlock);
+  std::vector<char> data;
+  for(int i=0; i < block.size(); i++){
+    data.push_back(block[i]);
+  }
+  directory_header dir(block);
+
+  for(unsigned int i = 0; i < dir.children.size(); i++){
+    block = mMemblockDevice.readBlock(dir.children.at(i));
+    unspecified_header USH(block);
+    if(name == USH.name){
+      if(USH.data.at(0) != 1){
+        return -2;
+      }
+      return USH.block;
+    }
+  }
+  return -1;
 }
 
 std::string FileSystem::listDir(int loc){

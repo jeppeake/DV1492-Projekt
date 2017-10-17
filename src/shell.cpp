@@ -21,8 +21,8 @@ std::string help();
 int main(void) {
 
 	std::string userCommand, commandArr[MAXCOMMANDS];
-	std::string user = "Operator";    // Change this if you want another user to be displayed
-	std::string currentDir = "/";    // current directory, used for output
+	std::string user = "Operator";
+	std::string currentDir = "root";    // current directory, used for output
 
   int currBlock = 0;
 
@@ -52,7 +52,7 @@ int main(void) {
                 FS = new FileSystem();
                 break;
             case 2: // ls
-                std::cout << "Listing directory" << std::endl;
+                std::cout << FS->listDir(currBlock) << std::endl;
                 break;
             case 3: // create
                 break;
@@ -72,8 +72,24 @@ int main(void) {
                 break;
             case 11: // mkdir
                 break;
-            case 12: // cd
-                break;
+            case 12:{ // cd
+                if(nrOfCommands == 2){
+                  std::string name = commandArr[1];
+                  int returnCode = FS->goToFolder(name, currBlock);
+                  if(returnCode == -2){
+                    std::cout << name << " is not a directory." << std::endl;
+                    break;
+                  }
+                  if(returnCode == -1){
+                    std::cout << name << " not found." << std::endl;
+                    break;
+                  }
+                  currBlock = returnCode;
+                  break;
+                }else{
+                  std::cout << "Missing parameter <path>" << std::endl;
+                }
+              }
             case 13: // pwd
                 break;
             case 14: // help

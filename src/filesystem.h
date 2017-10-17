@@ -122,23 +122,6 @@ private:
         return data;
       }
 
-      /*std::string getLocation(MemBlockDevice mem){
-        int original_block = block;
-        std::string loc;
-        while(parent != block){//if parent == block then we have reached root
-          loc = name + "/" + loc;
-          Block block = mem.readBlock(parent);
-          //reader = 0;
-          data.clear();
-          for(int i=0; i < block.size(); i++){
-            data.push_back(block[i]);
-          }
-          unpackHeader(data);
-        }
-        loc = name + "/" + loc;
-        return loc;
-      }*/
-
       std::vector<char> data;
       int reader = 0;
       char type;
@@ -234,7 +217,7 @@ public:
     void removeFolder();
 
     /* Function will move the current location to a specified location in the filesystem */
-    void goToFolder();
+    int goToFolder(std::string name, int currBlock);
 
     /* This function will get all the files and folders in the specified folder */
     std::string listDir(int loc);
