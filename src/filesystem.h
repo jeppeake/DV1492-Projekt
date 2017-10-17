@@ -8,7 +8,7 @@ class FileSystem
 {
 private:
     MemBlockDevice mMemblockDevice;
-
+    int block = 0;
     // Here you can add your own data structures
 
     template<typename T>
@@ -52,7 +52,7 @@ private:
     struct header{
 
       enum TYPE{
-        DIRECTORY, FILE
+        EMPTY, DIRECTORY, FILE
       };
 
     public:
@@ -63,7 +63,7 @@ private:
         this->block = block;
         this->name = name;
 
-        std::cout << printHeaderData() << std::endl;
+        //std::cout << printHeaderData() << std::endl;
       }
 
       header(Block block){
@@ -75,12 +75,15 @@ private:
         //data = block
         unpackHeader(data);
 
-        std::cout << printHeaderData() << std::endl;
+        //std::cout << printHeaderData() << std::endl;
       }
 
       virtual void pack(std::vector<char> &vec) = 0;
 
       void packHeader(){
+
+        data.clear();
+
         data.push_back(type);
         appendInt(data, parent);
         appendInt(data, block);
@@ -90,12 +93,16 @@ private:
       }
 
       void unpackHeader(std::vector<char>& vec){
+        reader = 0;
+
         type = vec.at(reader); reader++;
         parent = extractInt(vec,reader); reader+=4;
-        block = extractInt(vec,5); reader+=4;
+        block = extractInt(vec, reader); reader+=4;
 
-        int length = extractInt(vec, 9); reader += 4;
-        name = extractString(vec, length, 13); reader += length;
+        int length = extractInt(vec, reader); reader += 4;
+        name = extractString(vec, length, reader); reader += length;
+
+        //std::cout << "Reading:" << std::endl << printHeaderData() << std::endl;
       }
 
       virtual void unpack() = 0;
@@ -111,15 +118,46 @@ private:
         return ss.str();
       }
 
+      std::vector<char> getData(){
+        return data;
+      }
+
+      /*std::string getLocation(MemBlockDevice mem){
+        int original_block = block;
+        std::string loc;
+        while(parent != block){//if parent == block then we have reached root
+          loc = name + "/" + loc;
+          Block block = mem.readBlock(parent);
+          //reader = 0;
+          data.clear();
+          for(int i=0; i < block.size(); i++){
+            data.push_back(block[i]);
+          }
+          unpackHeader(data);
+        }
+        loc = name + "/" + loc;
+        return loc;
+      }*/
+
       std::vector<char> data;
-
       int reader = 0;
-
       char type;
       int parent;
       int block;
       std::string name;
 
+    };
+
+
+    struct unspecified_header : public header{//used to only access header content
+      unspecified_header(Block block) : header(block){
+        unpack();
+        //std::cout << "Reading:" << std::endl << printHeaderData() << std::endl;
+      }
+      void pack(std::vector<char> &vec){
+      }
+      void unpack(){
+      }
     };
 
     struct directory_header : public header{
@@ -129,17 +167,22 @@ private:
         if(parent == block){
           //root
         }
+
+        //std::cout << "Creating:" << std::endl << printHeaderData() << std::endl;
       }
 
       directory_header(Block block) : header(block){
         //reader
         unpack();
+        //std::cout << "Reading:" << std::endl << printHeaderData() << std::endl;
       }
 
       void pack(std::vector<char> &vec){
         packHeader();
-        //pack all files/subfolders here
-        for(int i = 0;i < children.size(); i++){
+
+        //packing block info of all files/subfolders
+        appendInt(data, children.size());
+        for(unsigned int i = 0;i < children.size(); i++){
           data.push_back(children.at(i));
         }
 
@@ -147,11 +190,22 @@ private:
       }
 
       void unpack(){
-
+        int length = extractInt(data, reader); reader += 4;
+        for(int i = 0; i < length; i++){
+          children.push_back(data.at(reader + i));
+        }
       }
 
       void addChild(char block){
         children.push_back(block);
+      }
+
+      void removeChild(int block){
+        for(unsigned int i=0;i<children.size();i++){
+          if(children.at(i) == block){
+            children.erase(children.begin() + i);
+          }
+        }
       }
 
       std::vector<char> children;
@@ -165,7 +219,7 @@ public:
 	   You are free to specify parameter lists and return values
     */
 
-    std::string getFullName(int block);
+    std::string getLocation(int loc);
 
     /* This function creates a file in the filesystem */
     void createFile();
@@ -183,7 +237,7 @@ public:
     void goToFolder();
 
     /* This function will get all the files and folders in the specified folder */
-    void listDir();
+    std::string listDir(int loc);
 
     /* Add your own member-functions if needed */
 };
