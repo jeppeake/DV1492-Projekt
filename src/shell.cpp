@@ -51,9 +51,26 @@ int main(void) {
                 }
                 FS = new FileSystem();
                 break;
-            case 2: // ls
-                std::cout << FS->listDir(currBlock) << std::endl;
+            case 2:{ // ls
+                //"walkdown" code
+                if(nrOfCommands == 2){
+                  std::string path = commandArr[1];
+                  int ret = FS->goToFolder(path, currBlock);
+                  //std::cout << ret << std::endl;
+                  if(ret >= 0){
+                    std::cout << FS->listDir(ret) << std::endl;
+                  }else if(ret == -1){
+                    std::cout << "Path not found." << std::endl;
+                  } else if (ret == -2){
+                    std::cout << "Path error, non-directory included." << std::endl;
+                  }
+                }else if (nrOfCommands == 1){
+                  std::cout << FS->listDir(currBlock) << std::endl;
+                }else{
+                  std::cout << "Command error" << std::endl;
+                }
                 break;
+              }
             case 3: // create
                 break;
             case 4: // cat
@@ -73,7 +90,7 @@ int main(void) {
             case 11: // mkdir
                 break;
             case 12:{ // cd
-                if(nrOfCommands == 2){
+                if(nrOfCommands >= 2){//cant go back, need to fix
                   std::string name = commandArr[1];
                   int returnCode = FS->goToFolder(name, currBlock);
                   if(returnCode == -2){

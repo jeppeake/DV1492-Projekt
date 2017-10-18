@@ -3,6 +3,7 @@
 
 #include "memblockdevice.h"
 #include <sstream>
+#include <string.h>
 
 class FileSystem
 {
@@ -135,7 +136,6 @@ private:
     struct unspecified_header : public header{//used to only access header content
       unspecified_header(Block block) : header(block){
         unpack();
-        //std::cout << "Reading:" << std::endl << printHeaderData() << std::endl;
       }
       void pack(std::vector<char> &vec){
       }
@@ -217,12 +217,13 @@ public:
     void removeFolder();
 
     /* Function will move the current location to a specified location in the filesystem */
-    int goToFolder(std::string name, int currBlock);
+    int goToFolder(std::string path, int loc);
 
     /* This function will get all the files and folders in the specified folder */
     std::string listDir(int loc);
 
     /* Add your own member-functions if needed */
+
 };
 
 #endif // FILESYSTEM_H

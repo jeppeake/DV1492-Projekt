@@ -88,28 +88,54 @@ void FileSystem::removeFolder(){
 
 }
 
-int FileSystem::goToFolder(std::string name, int currBlock){
+int FileSystem::goToFolder(std::string path, int loc){
+  Block block;
 
-
-
-  Block block = mMemblockDevice.readBlock(currBlock);
-  std::vector<char> data;
-  for(int i=0; i < block.size(); i++){
-    data.push_back(block[i]);
+  char* currDir;
+  currDir = strtok(&path[0],"/");
+  bool absolute_path = false;
+  if(strcmp(currDir,"root") == 0){
+    absolute_path = true;
   }
-  directory_header dir(block);
-
-  for(unsigned int i = 0; i < dir.children.size(); i++){
-    block = mMemblockDevice.readBlock(dir.children.at(i));
+  if(absolute_path){
+    loc = 0;
+  }
+  //std::cout << "AP: " << absolute_path << std::endl;
+  while(currDir != NULL){
+    //std::cout << currDir << std::endl;
+    Block block;
+    block = mMemblockDevice.readBlock(loc);
     unspecified_header USH(block);
-    if(name == USH.name){
-      if(USH.data.at(0) != 1){
-        return -2;
+    if(strcmp(currDir,"..") == 0){//move up two
+      block = mMemblockDevice.readBlock(USH.parent);
+      unspecified_header USH2(block);
+      loc = USH2.parent;
+      //std::cout << "Operating with .." << std::endl;
+    }else if(strcmp(currDir,".") == 0){//move up one
+      loc = USH.parent;
+      //std::cout << "Operating with ." << std::endl;
+    }else{//search for child (move down)
+      if(USH.type == 1){
+        directory_header dir(block);
+        bool found = false;
+        for(unsigned int i = 0; i < dir.children.size(); i++){
+          block = mMemblockDevice.readBlock(dir.children.at(i));
+          unspecified_header USH2(block);
+          if(USH2.name == currDir){
+            loc = dir.children.at(i);
+            found = true;
+          }
+        }
+        if(!found){
+          return -1;//not found header
+        }
+      }else{
+        return -2;//non-directory error
       }
-      return USH.block;
     }
+    currDir = strtok(NULL,"/");
   }
-  return -1;
+  return loc;
 }
 
 std::string FileSystem::listDir(int loc){
