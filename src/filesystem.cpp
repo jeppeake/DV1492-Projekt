@@ -15,6 +15,9 @@ FileSystem::FileSystem() {
   directory_header dir2(mMemblockDevice.readBlock(2));
   //std::cout << getLocation(2) << std::endl;
   //std::cout << listDir(0) << std::endl;
+
+  //std::cout << findByName(0,"File1") << std::endl;
+
 }
 
 FileSystem::~FileSystem() {
@@ -43,13 +46,37 @@ std::string FileSystem::getLocation(int loc){
   return s;
 }
 
-void FileSystem::createFile(){
+void FileSystem::createFile(int parent, std::string name){
+  //call allocation file to find empty space
+  std::vector<char> vec;
 
+  file_header dir(parent, block, name);
+
+  dir.pack(vec);
+  //std::cout << vec.size() << std::endl;
+  for(int i = vec.size(); i < block_size; i++){
+    vec.push_back(0);
+  }
+
+  mMemblockDevice.writeBlock(block, vec);
+
+
+  directory_header parentBlock(mMemblockDevice.readBlock(parent));//need to load parent to write new data
+  parentBlock.addChild(block);
+
+  std::vector<char> vec2;
+  parentBlock.pack(vec2);
+  for(int i = vec2.size(); i < block_size; i++){
+    vec2.push_back(0);
+  }
+  mMemblockDevice.writeBlock(parent, vec2);
+
+  block++;
 }
 
 void FileSystem::createFolderi(int parent, std::string name){
 
-  //call allocation file to find empty space?
+  //call allocation file to find empty space
 
   //int block = 0;
 
@@ -58,8 +85,8 @@ void FileSystem::createFolderi(int parent, std::string name){
   directory_header dir(parent, block, name);
 
   dir.pack(vec);
-
-  for(int i = vec.size(); i < 512; i++){//need to fill out rest of array with garbage, fix dynamic max allocation (512)
+  //std::cout << vec.size() << std::endl;
+  for(int i = vec.size(); i < block_size; i++){
     vec.push_back(0);
   }
 
@@ -72,7 +99,7 @@ void FileSystem::createFolderi(int parent, std::string name){
   std::vector<char> vec2;
   parentBlock.pack(vec2);
   //std::cout << vec2.size() << std::endl;
-  for(int i = vec2.size(); i < 512; i++){//need to fill out rest of array with garbage, fix dynamic max allocation (512)
+  for(int i = vec2.size(); i < block_size; i++){
     vec2.push_back(0);
   }
   mMemblockDevice.writeBlock(parent, vec2);
@@ -93,11 +120,8 @@ int FileSystem::goToFolder(std::string path, int loc){
 
   char* currDir;
   currDir = strtok(&path[0],"/");
-  bool absolute_path = false;
+
   if(strcmp(currDir,"root") == 0){
-    absolute_path = true;
-  }
-  if(absolute_path){
     loc = 0;
   }
   //std::cout << "AP: " << absolute_path << std::endl;
@@ -110,12 +134,9 @@ int FileSystem::goToFolder(std::string path, int loc){
       block = mMemblockDevice.readBlock(USH.parent);
       unspecified_header USH2(block);
       loc = USH2.parent;
-      //std::cout << "Operating with .." << std::endl;
     }else if(strcmp(currDir,".") == 0){//move up one
       loc = USH.parent;
-      //std::cout << "Operating with ." << std::endl;
     }else{//search for child (move down)
-      if(USH.type == 1){
         directory_header dir(block);
         bool found = false;
         for(unsigned int i = 0; i < dir.children.size(); i++){
@@ -124,14 +145,16 @@ int FileSystem::goToFolder(std::string path, int loc){
           if(USH2.name == currDir){
             loc = dir.children.at(i);
             found = true;
+            block = mMemblockDevice.readBlock(loc);
+            unspecified_header USH3(block);
+            if(USH3.type != DIRECTORY){
+              return -2;
+            }
           }
         }
         if(!found){
           return -1;//not found header
         }
-      }else{
-        return -2;//non-directory error
-      }
     }
     currDir = strtok(NULL,"/");
   }
@@ -152,12 +175,51 @@ std::string FileSystem::listDir(int loc){
   }
 
   directory_header dir(block);
-  s = getLocation(loc) + "\n";
+  s = getLocation(loc);
   for(unsigned int i=0;i<dir.children.size();i++){
     block = mMemblockDevice.readBlock(dir.children.at(i));
     unspecified_header head(block);
-    s += "  " + head.name + "\n";
+    s += "\n  " + head.name;
   }
 
   return s;
+}
+
+int FileSystem::findByName(int loc, std::string name){
+  Block block = mMemblockDevice.readBlock(loc);
+  if(block[0] != 1){
+    return -2;
+  }
+  directory_header dir(block);
+  for(unsigned int i = 0; i < dir.children.size(); i++){
+    block = mMemblockDevice.readBlock(dir.children.at(i));
+    unspecified_header USH(block);
+    if(USH.name == name){
+      return dir.children.at(i);
+    }
+  }
+  return -1;
+}
+
+int FileSystem::editHeader(int loc, std::string name){
+  Block block = mMemblockDevice.readBlock(loc);
+  header* head;
+  if(block[0] == 1){
+    head = new directory_header(block);
+  }else if(block[0] == 2){
+    head = new file_header(block);
+  }else{
+    return -2;
+  }
+  head->name = name;
+
+  std::vector<char> vec;
+
+  head->pack(vec);
+
+  for(int i = vec.size(); i < block_size; i++){
+    vec.push_back(0);
+  }
+
+  mMemblockDevice.writeBlock(loc, vec);
 }

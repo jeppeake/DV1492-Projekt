@@ -10,6 +10,7 @@ class FileSystem
 private:
     MemBlockDevice mMemblockDevice;
     int block = 0;
+    int block_size = 512;
     // Here you can add your own data structures
 
     template<typename T>
@@ -50,11 +51,11 @@ private:
       return ret;
     }
 
-    struct header{
+    enum TYPE{
+      EMPTY, DIRECTORY, FILE
+    };
 
-      enum TYPE{
-        EMPTY, DIRECTORY, FILE
-      };
+    struct header{
 
     public:
 
@@ -79,10 +80,9 @@ private:
         //std::cout << printHeaderData() << std::endl;
       }
 
-      virtual void pack(std::vector<char> &vec) = 0;
+      virtual int pack(std::vector<char> &vec) = 0;//returns overflow length
 
       void packHeader(){
-
         data.clear();
 
         data.push_back(type);
@@ -137,9 +137,13 @@ private:
       unspecified_header(Block block) : header(block){
         unpack();
       }
-      void pack(std::vector<char> &vec){
+      int pack(std::vector<char> &vec){
+        packHeader();
+        vec = data;
+        return 0;
       }
       void unpack(){
+        //unpackHeader();
       }
     };
 
@@ -147,10 +151,6 @@ private:
     public:
       directory_header(int parent, int block, std::string name) : header(DIRECTORY, parent, block, name){
         //creator
-        if(parent == block){
-          //root
-        }
-
         //std::cout << "Creating:" << std::endl << printHeaderData() << std::endl;
       }
 
@@ -160,9 +160,8 @@ private:
         //std::cout << "Reading:" << std::endl << printHeaderData() << std::endl;
       }
 
-      void pack(std::vector<char> &vec){
+      int pack(std::vector<char> &vec){
         packHeader();
-
         //packing block info of all files/subfolders
         appendInt(data, children.size());
         for(unsigned int i = 0;i < children.size(); i++){
@@ -170,6 +169,7 @@ private:
         }
 
         vec = data;
+        return 0;
       }
 
       void unpack(){
@@ -194,6 +194,34 @@ private:
       std::vector<char> children;
     };
 
+    struct file_header : public header{
+    public:
+      file_header(int parent, int block, std::string name) : header(FILE, parent, block, name){
+        //creator
+        //std::cout << "Creating:" << std::endl << printHeaderData() << std::endl;
+      }
+      file_header(Block block) : header(block){
+        //reader
+        unpack();
+      }
+
+      int pack(std::vector<char> &vec){
+        packHeader();
+
+        //specify block length
+        appendInt(data, block_length);
+        vec = data;
+        return 0;
+      }
+
+      void unpack(){
+        block_length = extractInt(data, reader); reader += 4;
+        //read subequent blocks?
+      }
+      int block_length;
+      std::vector<char> content;
+    };
+
 public:
     FileSystem();
     ~FileSystem();
@@ -205,7 +233,7 @@ public:
     std::string getLocation(int loc);
 
     /* This function creates a file in the filesystem */
-    void createFile();
+    void createFile(int parent, std::string name);
 
     /* Creates a folder in the filesystem */
     void createFolderi(int parent, std::string name);
@@ -221,6 +249,9 @@ public:
 
     /* This function will get all the files and folders in the specified folder */
     std::string listDir(int loc);
+
+    int findByName(int loc, std::string name);
+    int editHeader(int loc, std::string name);
 
     /* Add your own member-functions if needed */
 

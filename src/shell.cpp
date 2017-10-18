@@ -74,6 +74,11 @@ int main(void) {
             case 3: // create
                 break;
             case 4: // cat
+                if(nrOfCommands >= 2){
+                  FS->createFile(currBlock, commandArr[1]);
+                }else{
+                  std::cout << "Missing parameter <name>" << std::endl;
+                }
                 break;
             case 5: // createImage
                 break;
@@ -86,11 +91,22 @@ int main(void) {
             case 9: // append
                 break;
             case 10: // mv
+                if(nrOfCommands >= 3){
+                  int to_rename = FS->findByName(currBlock, commandArr[1]);
+                  FS->editHeader(to_rename, commandArr[2]);
+                }else{
+                  std::cout << "Missing parameters" << std::endl;
+                }
                 break;
             case 11: // mkdir
+                if(nrOfCommands >= 2){
+                  FS->createFolderi(currBlock, commandArr[1]);
+                }else{
+                  std::cout << "Missing parameter <name>" << std::endl;
+                }
                 break;
             case 12:{ // cd
-                if(nrOfCommands >= 2){//cant go back, need to fix
+                if(nrOfCommands >= 2){
                   std::string name = commandArr[1];
                   int returnCode = FS->goToFolder(name, currBlock);
                   if(returnCode == -2){
@@ -102,12 +118,14 @@ int main(void) {
                     break;
                   }
                   currBlock = returnCode;
-                  break;
+                  currentDir = FS->getLocation(currBlock);
                 }else{
                   std::cout << "Missing parameter <path>" << std::endl;
                 }
+                break;
               }
             case 13: // pwd
+                std::cout << FS->getLocation(currBlock) << std::endl;
                 break;
             case 14: // help
                 std::cout << help() << std::endl;
