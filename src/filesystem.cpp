@@ -1,5 +1,14 @@
 #include "filesystem.h"
 
+#include <iostream>
+#include <fstream>
+#include <streambuf>
+#include <ostream>
+#include <sstream>
+
+
+
+
 FileSystem::FileSystem() {
   createFolderi(0, "root");
   createFolderi(0, "File1");
@@ -335,4 +344,28 @@ std::string FileSystem::readFile(int loc, std::string name){
   }while(running);
   delete file;
   return ss.str();
+}
+
+void FileSystem::saveToFile(std::string path)
+{
+  std::ofstream out;
+  out.open(path);
+  for(int i=0;i<mMemblockDevice.size();i++)
+  {
+    out << mMemblockDevice.readBlock(i).toString() << '#';
+  }
+}
+
+void FileSystem::loadFromFile(std::string path)
+{
+  std::ifstream t(path);
+  std::string raw = std::string((std::istreambuf_iterator<char>(t)), std::istreambuf_iterator<char>());
+  std::stringstream stream(raw);
+
+  int block = 0;
+  for(std::string line; std::getline(stream,line,('#')); )
+  {
+    mMemblockDevice.writeBlock(block,line);
+    block++;
+  }
 }
