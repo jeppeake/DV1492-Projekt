@@ -17,7 +17,22 @@ FileSystem::FileSystem() {
   //std::cout << listDir(0) << std::endl;
 
   //std::cout << findByName(0,"File1") << std::endl;
+  createFile(0, "Garbage");
+  std::vector<char> vec;
+  for(int i=0;i<800;i++){
+    vec.push_back(i);
+  }
+  //std::cout << "vec: " << vec.size() << std::endl;
+  std::cout << appendData(0, "Garbage", vec) << std::endl;
 
+  std::cout << "First empty: " << findEmptyBlock() << std::endl;
+
+  createFile(0, "Lorem");
+  std::string test = "Curabitur consequat rutrum massa, nec elementum risus sollicitudin vel. Quisque mi purus, imperdiet at tortor ac, sollicitudin dignissim ex. Nam condimentum enim non sem molestie semper sit amet a ex. Sed quam sem, dapibus eu interdum eget, pulvinar id sapien. Morbi sit amet justo ac erat efficitur commodo eget id libero. Fusce aliquet lacus non varius luctus. Mauris lobortis nisl sit amet facilisis volutpat. Integer posuere ullamcorper dui. Morbi quis scelerisque risus. Proin tincidunt, tellus quis fermentum finibus, nunc justo tempor neque, non congue tortor tellus at neque. Vivamus scelerisque tortor quis lobortis convallis. Integer vel massa posuere urna viverra pretium in eu eros. Quisque hendrerit quam non turpis congue vestibulum. Nam maximus ligula metus, sit amet sagittis mi mollis ac. Donec at rutrum quam, nec blandit libero. ";
+
+  std::vector<char> to_append(test.begin(), test.end());
+  to_append.push_back('\0');
+  std::cout << appendData(0, "Lorem", to_append) << std::endl;
 }
 
 FileSystem::~FileSystem() {
@@ -46,10 +61,10 @@ std::string FileSystem::getLocation(int loc){
   return s;
 }
 
-void FileSystem::createFile(int parent, std::string name){
+int FileSystem::createFile(int parent, std::string name){
   //call allocation file to find empty space
   std::vector<char> vec;
-
+  int block = findEmptyBlock();
   file_header dir(parent, block, name);
 
   dir.pack(vec);
@@ -60,28 +75,29 @@ void FileSystem::createFile(int parent, std::string name){
 
   mMemblockDevice.writeBlock(block, vec);
 
+  if(parent != -1){
+    directory_header parentBlock(mMemblockDevice.readBlock(parent));//need to load parent to write new data
+    parentBlock.addChild(block);
 
-  directory_header parentBlock(mMemblockDevice.readBlock(parent));//need to load parent to write new data
-  parentBlock.addChild(block);
-
-  std::vector<char> vec2;
-  parentBlock.pack(vec2);
-  for(int i = vec2.size(); i < block_size; i++){
-    vec2.push_back(0);
+    std::vector<char> vec2;
+    parentBlock.pack(vec2);
+    for(int i = vec2.size(); i < block_size; i++){
+      vec2.push_back(0);
+    }
+    mMemblockDevice.writeBlock(parent, vec2);
   }
-  mMemblockDevice.writeBlock(parent, vec2);
 
-  block++;
+  return block;
 }
 
-void FileSystem::createFolderi(int parent, std::string name){
+int FileSystem::createFolderi(int parent, std::string name){
 
   //call allocation file to find empty space
 
   //int block = 0;
 
   std::vector<char> vec;
-
+  int block = findEmptyBlock();
   directory_header dir(parent, block, name);
 
   dir.pack(vec);
@@ -104,7 +120,7 @@ void FileSystem::createFolderi(int parent, std::string name){
   }
   mMemblockDevice.writeBlock(parent, vec2);
 
-  block++;
+  return block;
 }
 
 void FileSystem::removeFile(){
@@ -117,16 +133,12 @@ void FileSystem::removeFolder(){
 
 int FileSystem::goToFolder(std::string path, int loc){
   Block block;
-
   char* currDir;
   currDir = strtok(&path[0],"/");
-
   if(strcmp(currDir,"root") == 0){
     loc = 0;
   }
-  //std::cout << "AP: " << absolute_path << std::endl;
   while(currDir != NULL){
-    //std::cout << currDir << std::endl;
     Block block;
     block = mMemblockDevice.readBlock(loc);
     unspecified_header USH(block);
@@ -148,7 +160,7 @@ int FileSystem::goToFolder(std::string path, int loc){
             block = mMemblockDevice.readBlock(loc);
             unspecified_header USH3(block);
             if(USH3.type != DIRECTORY){
-              return -2;
+              return -2;//not directory error
             }
           }
         }
@@ -222,4 +234,105 @@ int FileSystem::editHeader(int loc, std::string name){
   }
 
   mMemblockDevice.writeBlock(loc, vec);
+  delete head;
+}
+
+int FileSystem::appendData(int loc, std::string name, std::vector<char> content){
+  loc = findByName(loc, name);
+  if(loc < 0){
+    return loc;
+  }
+  Block block;
+  block = mMemblockDevice.readBlock(loc);
+  if(block[0] != FILE){
+    return -2;
+  }
+  file_header file(block);
+  for(unsigned int i=0;i<content.size();i++){
+    file.content.push_back(content.at(i));
+  }
+  std::vector<char> vec;
+  int overflow = file.pack(vec);
+  while(vec.size() < block_size){
+    vec.push_back(0);
+  }
+  std::cout << "Write status: " << mMemblockDevice.writeBlock(loc, vec) << std::endl;
+  std::cout << "Overflow: " << overflow << std::endl;
+
+
+  Block primaryBlock = mMemblockDevice.readBlock(loc);
+  Block secondaryBlock;
+  int file_overflows = 1;
+  while(overflow != content.size()){
+    std::cout << file_overflows << std::endl;
+    file_header parentFile(primaryBlock);
+    std::cout << overflow << std::endl;
+    int newLoc = createFile(-1, parentFile.name);
+
+    secondaryBlock = mMemblockDevice.readBlock(newLoc);
+    file_header childFile(secondaryBlock);
+    parentFile.CB = childFile.block;
+
+    for(unsigned int i = overflow; i < content.size();i++){
+      childFile.content.push_back(content.at(i));
+    }
+
+    std::vector<char> parentVector;
+    parentFile.pack(parentVector);
+    while(parentVector.size() < block_size){
+      parentVector.push_back(0);
+    }
+    mMemblockDevice.writeBlock(parentFile.block, parentVector);
+
+    std::vector<char> childVector;
+    overflow += childFile.pack(childVector);
+    while(childVector.size() < block_size){
+      childVector.push_back(0);
+    }
+    mMemblockDevice.writeBlock(childFile.block, childVector);
+
+    Block primaryBlock = mMemblockDevice.readBlock(childFile.block);
+
+    file_overflows++;
+  }
+  //do overflow
+  return loc;
+}
+
+int FileSystem::findEmptyBlock(){
+  for(int i = 0; i < mMemblockDevice.size(); i++){
+    if(mMemblockDevice.readBlock(i)[0] == 0){
+      return i;
+    }
+  }
+  return -1;
+}
+
+std::string FileSystem::readFile(int loc, std::string name){
+  loc = findByName(loc, name);
+  Block block = mMemblockDevice.readBlock(loc);
+  std::stringstream ss;
+  if(block[0] != FILE){
+    ss << name << " is not a file." << std::endl;
+    return ss.str();
+  }
+  file_header* file = new file_header(block);
+  int next = file->CB;
+  std::cout << "next: " << next << std::endl;
+  bool running = true;
+  do{
+    for(unsigned int i = 0; i < file->content.size(); i++){
+      ss << file->content.at(i);
+    }
+    ss << "\n";
+    if(next != -1){
+      block = mMemblockDevice.readBlock(next);
+      file = new file_header(block);
+      next = file->CB;
+    }else{
+      running = false;
+    }
+  }while(running);
+  delete file;
+  return ss.str();
 }

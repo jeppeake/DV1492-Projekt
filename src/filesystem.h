@@ -9,7 +9,7 @@ class FileSystem
 {
 private:
     MemBlockDevice mMemblockDevice;
-    int block = 0;
+    //int block = 0;
     int block_size = 512;
     // Here you can add your own data structures
 
@@ -203,22 +203,39 @@ private:
       file_header(Block block) : header(block){
         //reader
         unpack();
+        //std::cout << "CB: " << CB << "  Content_length: " << content_length << std::endl;
       }
 
       int pack(std::vector<char> &vec){
         packHeader();
-
         //specify block length
-        appendInt(data, block_length);
+        content_length = (signed int)content.size();
+        //std::cout << "Packing length: "<<content_length << std::endl;
+        appendInt(data, content_length);
+        appendInt(data, CB);
+        int overflow = 0;
+        //std::cout << "Overflow (init): " << overflow << std::endl;
+        for(unsigned int i = 0; i < content.size() && data.size() < 512; i++){
+          data.push_back(content.at(i));
+          overflow++;
+        }
+
         vec = data;
-        return 0;
+        //std::cout << "CB: " << CB << std::endl << "Content_length: " << content.size() << std::endl;
+        return overflow;
       }
 
       void unpack(){
-        block_length = extractInt(data, reader); reader += 4;
-        //read subequent blocks?
+        content_length = extractInt(data, reader); reader += 4;
+        //std::cout << "Unpacked length: " << content_length << std::endl;
+        CB = extractInt(data, reader); reader += 4;
+        for(unsigned int i = reader; i < reader + content_length && i < 512; i++){
+          //std::cout << i << std::endl;
+          content.push_back(data.at(i));
+        }
       }
-      int block_length;
+      int CB = -1;
+      int content_length = 0;
       std::vector<char> content;
     };
 
@@ -233,10 +250,10 @@ public:
     std::string getLocation(int loc);
 
     /* This function creates a file in the filesystem */
-    void createFile(int parent, std::string name);
+    int createFile(int parent, std::string name);
 
     /* Creates a folder in the filesystem */
-    void createFolderi(int parent, std::string name);
+    int createFolderi(int parent, std::string name);
 
     /* Removes a file in the filesystem */
     void removeFile();
@@ -252,6 +269,9 @@ public:
 
     int findByName(int loc, std::string name);
     int editHeader(int loc, std::string name);
+    int appendData(int loc, std::string name, std::vector<char> content);
+    int findEmptyBlock();
+    std::string readFile(int loc, std::string name);
 
     /* Add your own member-functions if needed */
 

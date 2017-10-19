@@ -72,10 +72,15 @@ int main(void) {
                 break;
               }
             case 3: // create
+                if(nrOfCommands >= 2){
+                  FS->createFile(currBlock, commandArr[1]);
+                }else{
+                  std::cout << "Missing parameter <name>" << std::endl;
+                }
                 break;
             case 4: // cat
                 if(nrOfCommands >= 2){
-                  FS->createFile(currBlock, commandArr[1]);
+                  std::cout << FS->readFile(currBlock, commandArr[1]) << std::endl;
                 }else{
                   std::cout << "Missing parameter <name>" << std::endl;
                 }
@@ -88,7 +93,15 @@ int main(void) {
                 break;
             case 8: // cp
                 break;
-            case 9: // append
+            case 9:{ // append
+                  if(nrOfCommands >= 3){
+                    std::vector<char> to_append(commandArr[2].begin(), commandArr[2].end());
+                    to_append.push_back('\0');
+                    FS->appendData(currBlock, commandArr[1], to_append);
+                  }else{
+                    std::cout << "Missing parameters" << std::endl;
+                  }
+                }
                 break;
             case 10: // mv
                 if(nrOfCommands >= 3){
