@@ -19,20 +19,20 @@ FileSystem::FileSystem() {
   //std::cout << findByName(0,"File1") << std::endl;
   createFile(0, "Garbage");
   std::vector<char> vec;
-  for(int i=0;i<800;i++){
+  for(int i=0;i<100;i++){
     vec.push_back(i);
   }
   //std::cout << "vec: " << vec.size() << std::endl;
-  std::cout << appendData(0, "Garbage", vec) << std::endl;
+  appendData(0, "Garbage", vec);
 
-  std::cout << "First empty: " << findEmptyBlock() << std::endl;
+  //std::cout << "First empty: " << findEmptyBlock() << std::endl;
 
   createFile(0, "Lorem");
   std::string test = "Curabitur consequat rutrum massa, nec elementum risus sollicitudin vel. Quisque mi purus, imperdiet at tortor ac, sollicitudin dignissim ex. Nam condimentum enim non sem molestie semper sit amet a ex. Sed quam sem, dapibus eu interdum eget, pulvinar id sapien. Morbi sit amet justo ac erat efficitur commodo eget id libero. Fusce aliquet lacus non varius luctus. Mauris lobortis nisl sit amet facilisis volutpat. Integer posuere ullamcorper dui. Morbi quis scelerisque risus. Proin tincidunt, tellus quis fermentum finibus, nunc justo tempor neque, non congue tortor tellus at neque. Vivamus scelerisque tortor quis lobortis convallis. Integer vel massa posuere urna viverra pretium in eu eros. Quisque hendrerit quam non turpis congue vestibulum. Nam maximus ligula metus, sit amet sagittis mi mollis ac. Donec at rutrum quam, nec blandit libero. ";
 
   std::vector<char> to_append(test.begin(), test.end());
   to_append.push_back('\0');
-  std::cout << appendData(0, "Lorem", to_append) << std::endl;
+  appendData(0, "Lorem", to_append);
 }
 
 FileSystem::~FileSystem() {
@@ -247,26 +247,37 @@ int FileSystem::appendData(int loc, std::string name, std::vector<char> content)
   if(block[0] != FILE){
     return -2;
   }
-  file_header file(block);
-  for(unsigned int i=0;i<content.size();i++){
-    file.content.push_back(content.at(i));
+  file_header* file = new file_header(block);
+  //std::cout << file->CB << std::endl;
+  while(file->CB != -1){
+    //find bottom
+    block = mMemblockDevice.readBlock(file->CB);
+    delete file;
+    file = new file_header(block);
   }
+  //std::cout << file->CB << std::endl;
+  //std::cout <<
+
+  for(unsigned int i = 0; i < content.size(); i++){
+    file->content.push_back(content.at(i));
+  }
+
   std::vector<char> vec;
-  int overflow = file.pack(vec);
+  int overflow = file->pack(vec);
   while(vec.size() < block_size){
     vec.push_back(0);
   }
-  std::cout << "Write status: " << mMemblockDevice.writeBlock(loc, vec) << std::endl;
+  mMemblockDevice.writeBlock(loc, vec);
   std::cout << "Overflow: " << overflow << std::endl;
 
 
   Block primaryBlock = mMemblockDevice.readBlock(loc);
   Block secondaryBlock;
   int file_overflows = 1;
-  while(overflow != content.size()){
-    std::cout << file_overflows << std::endl;
+  while(overflow != file->content.size()){
+    //std::cout << file_overflows << std::endl;
     file_header parentFile(primaryBlock);
-    std::cout << overflow << std::endl;
+    //std::cout << overflow << std::endl;
     int newLoc = createFile(-1, parentFile.name);
 
     secondaryBlock = mMemblockDevice.readBlock(newLoc);
@@ -295,7 +306,7 @@ int FileSystem::appendData(int loc, std::string name, std::vector<char> content)
 
     file_overflows++;
   }
-  //do overflow
+  delete file;
   return loc;
 }
 
@@ -318,13 +329,12 @@ std::string FileSystem::readFile(int loc, std::string name){
   }
   file_header* file = new file_header(block);
   int next = file->CB;
-  std::cout << "next: " << next << std::endl;
+  //std::cout << "next: " << next << std::endl;
   bool running = true;
   do{
     for(unsigned int i = 0; i < file->content.size(); i++){
       ss << file->content.at(i);
     }
-    ss << "\n";
     if(next != -1){
       block = mMemblockDevice.readBlock(next);
       file = new file_header(block);
