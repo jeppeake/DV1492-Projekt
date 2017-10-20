@@ -86,8 +86,10 @@ int main(void) {
                 }
                 break;
             case 5: // createImage
+                FS->saveToFile(commandArr[1]);
                 break;
             case 6: // restoreImage
+                FS->loadFromFile(commandArr[1]);
                 break;
             case 7: // rm
                 break;

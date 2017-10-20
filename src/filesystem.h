@@ -274,7 +274,8 @@ public:
     std::string readFile(int loc, std::string name);
 
     /* Add your own member-functions if needed */
-
+    void saveToFile(std::string path);
+    void loadFromFile(std::string path);
 };
 
 #endif // FILESYSTEM_H
