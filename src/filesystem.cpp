@@ -11,16 +11,14 @@
 
 FileSystem::FileSystem() {
   createFolderi(0, "root");
-  createFolderi(0, "File1");
+  /*createFolderi(0, "File1");
   createFolderi(1, "File2");
 
   //createFile(1, "allocator"); proposition: allocator file will describe the file system, to make it easier to find unused space
   std::cout << "New filesystem created" << std::endl;
 
   directory_header dir(mMemblockDevice.readBlock(0));
-  /*for(unsigned int i = 0;i < dir.children.size();i++){
-    std::cout << "Child: " << i << " : " << (int)dir.children.at(i) << std::endl;
-  }*/
+
   directory_header dir2(mMemblockDevice.readBlock(2));
   //std::cout << getLocation(2) << std::endl;
   //std::cout << listDir(0) << std::endl;
@@ -35,13 +33,28 @@ FileSystem::FileSystem() {
   appendData(0, "Garbage", vec);
 
   //std::cout << "First empty: " << findEmptyBlock() << std::endl;
-
+  */
   createFile(0, "Lorem");
-  std::string test = "Curabitur consequat rutrum massa, nec elementum risus sollicitudin vel. Quisque mi purus, imperdiet at tortor ac, sollicitudin dignissim ex. Nam condimentum enim non sem molestie semper sit amet a ex. Sed quam sem, dapibus eu interdum eget, pulvinar id sapien. Morbi sit amet justo ac erat efficitur commodo eget id libero. Fusce aliquet lacus non varius luctus. Mauris lobortis nisl sit amet facilisis volutpat. Integer posuere ullamcorper dui. Morbi quis scelerisque risus. Proin tincidunt, tellus quis fermentum finibus, nunc justo tempor neque, non congue tortor tellus at neque. Vivamus scelerisque tortor quis lobortis convallis. Integer vel massa posuere urna viverra pretium in eu eros. Quisque hendrerit quam non turpis congue vestibulum. Nam maximus ligula metus, sit amet sagittis mi mollis ac. Donec at rutrum quam, nec blandit libero. ";
+  createFile(0, "Lorem2");
+
+  std::stringstream ss;
+
+  for(int i=0; i < 300; i++){
+    ss << "A" << i << " ";
+  }
+  std::string test = ss.str();
 
   std::vector<char> to_append(test.begin(), test.end());
   to_append.push_back('\0');
   appendData(0, "Lorem", to_append);
+  ss.str("");
+
+  for(int i=0; i < 300; i++){
+    ss << "B" << i << " ";
+  }
+  test = ss.str();
+  std::vector<char> to_append2(test.begin(), test.end());
+  appendData(0, "Lorem2", to_append2);
 }
 
 FileSystem::~FileSystem() {
@@ -74,7 +87,7 @@ int FileSystem::createFile(int parent, std::string name){
   //call allocation file to find empty space
   std::vector<char> vec;
   int block = findEmptyBlock();
-  file_header dir(parent, block, name);
+  file_header dir(parent, block, block_size, name);
 
   dir.pack(vec);
   //std::cout << vec.size() << std::endl;
@@ -244,6 +257,7 @@ int FileSystem::editHeader(int loc, std::string name){
 
   mMemblockDevice.writeBlock(loc, vec);
   delete head;
+  return 1;
 }
 
 int FileSystem::appendData(int loc, std::string name, std::vector<char> content){
@@ -259,63 +273,65 @@ int FileSystem::appendData(int loc, std::string name, std::vector<char> content)
   file_header* file = new file_header(block);
   //std::cout << file->CB << std::endl;
   while(file->CB != -1){
+    //std::cout << "Current: " << loc << std::endl;
+    //std::cout << "Next: " << file->CB << std::endl;
     //find bottom
-    block = mMemblockDevice.readBlock(file->CB);
+    loc = file->CB;
+    block = mMemblockDevice.readBlock(loc);
     delete file;
     file = new file_header(block);
   }
-  //std::cout << file->CB << std::endl;
-  //std::cout <<
-
-  for(unsigned int i = 0; i < content.size(); i++){
-    file->content.push_back(content.at(i));
-  }
-
-  std::vector<char> vec;
-  int overflow = file->pack(vec);
-  while(vec.size() < block_size){
-    vec.push_back(0);
-  }
-  mMemblockDevice.writeBlock(loc, vec);
-  std::cout << "Overflow: " << overflow << std::endl;
-
-
-  Block primaryBlock = mMemblockDevice.readBlock(loc);
-  Block secondaryBlock;
-  int file_overflows = 1;
-  while(overflow != file->content.size()){
-    //std::cout << file_overflows << std::endl;
-    file_header parentFile(primaryBlock);
-    //std::cout << overflow << std::endl;
-    int newLoc = createFile(-1, parentFile.name);
-
-    secondaryBlock = mMemblockDevice.readBlock(newLoc);
-    file_header childFile(secondaryBlock);
-    parentFile.CB = childFile.block;
-
-    for(unsigned int i = overflow; i < content.size();i++){
-      childFile.content.push_back(content.at(i));
-    }
-
-    std::vector<char> parentVector;
-    parentFile.pack(parentVector);
-    while(parentVector.size() < block_size){
-      parentVector.push_back(0);
-    }
-    mMemblockDevice.writeBlock(parentFile.block, parentVector);
-
-    std::vector<char> childVector;
-    overflow += childFile.pack(childVector);
-    while(childVector.size() < block_size){
-      childVector.push_back(0);
-    }
-    mMemblockDevice.writeBlock(childFile.block, childVector);
-
-    Block primaryBlock = mMemblockDevice.readBlock(childFile.block);
-
-    file_overflows++;
-  }
   delete file;
+
+  //std::cout << "Current: " << loc << std::endl;
+  //std::cout << "Next: " << file->CB << std::endl;
+
+  int file_overflows = 0;
+  int overflow = 0;
+  while(overflow != content.size()){
+
+    Block primaryBlock = mMemblockDevice.readBlock(loc);
+
+    //std::cout << "Overflows: " << file_overflows << std::endl;
+    //std::cout << "Overflow (loop): " << overflow << std::endl;
+    //std::cout << "Current block: " << loc << std::endl;
+    //std::cout << "Data left to write (pre write): " << content.size() - overflow << std::endl;
+    //std::cout << "Current: " << loc << std::endl;
+    //std::cout << "Next: " << file->CB << std::endl;
+    file_header currentFile(primaryBlock);
+    //int newLoc = createFile(-1, parentFile.name);
+    std::vector<char> vec;
+    int original_size = currentFile.pack(vec);
+
+    for(int i=overflow;i<content.size();i++){
+      currentFile.content.push_back(content.at(i));
+      //std::cout << content.at(i);
+    }
+    //std::cout << std::endl;
+    vec.clear();
+    int new_size = currentFile.pack(vec);
+    overflow += new_size - original_size;
+    int newLoc = -1;
+    //std::cout << "Data left to write (post write): " << content.size() - overflow << std::endl;
+    if(overflow != content.size()){
+      //new file
+      //std::cout << "Overflowing" << std::endl;
+      newLoc = createFile(-1, currentFile.name);
+
+      currentFile.CB = newLoc;
+      //std::cout << "Created new sub-file at: " << newLoc << std::endl;
+      vec.clear();
+      currentFile.pack(vec);
+
+      file_overflows++;
+    }
+    for(int i=vec.size();i<block_size;i++){
+      vec.push_back(0);
+    }
+    int result = mMemblockDevice.writeBlock(loc, vec);
+    //std::cout << result << std::endl;
+    loc = newLoc;
+  }
   return loc;
 }
 
@@ -338,9 +354,11 @@ std::string FileSystem::readFile(int loc, std::string name){
   }
   file_header* file = new file_header(block);
   int next = file->CB;
-  //std::cout << "next: " << next << std::endl;
   bool running = true;
   do{
+    //std::cout << "next: " << next << std::endl;
+    //std::cout << "Content size (actual): " << file->content.size() << std::endl;
+    //std::cout << "Content size (coded): " << file->content_length << std::endl;
     for(unsigned int i = 0; i < file->content.size(); i++){
       ss << file->content.at(i);
     }

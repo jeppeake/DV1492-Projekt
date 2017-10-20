@@ -196,9 +196,10 @@ private:
 
     struct file_header : public header{
     public:
-      file_header(int parent, int block, std::string name) : header(FILE, parent, block, name){
+      file_header(int parent, int block, int block_length, std::string name) : header(FILE, parent, block, name){
         //creator
-        //std::cout << "Creating:" << std::endl << printHeaderData() << std::endl;
+        this->block_length = block_length;
+        //std::cout << this->block_length<< std::endl;
       }
       file_header(Block block) : header(block){
         //reader
@@ -209,13 +210,14 @@ private:
       int pack(std::vector<char> &vec){
         packHeader();
         //specify block length
-        content_length = (signed int)content.size();
+        content_length = content.size();
         //std::cout << "Packing length: "<<content_length << std::endl;
         appendInt(data, content_length);
         appendInt(data, CB);
+        appendInt(data, block_length);
         int overflow = 0;
         //std::cout << "Overflow (init): " << overflow << std::endl;
-        for(unsigned int i = 0; i < content.size() && data.size() < 512; i++){
+        for(unsigned int i = 0; i < content.size() && data.size() < block_length; i++){
           data.push_back(content.at(i));
           overflow++;
         }
@@ -229,13 +231,16 @@ private:
         content_length = extractInt(data, reader); reader += 4;
         //std::cout << "Unpacked length: " << content_length << std::endl;
         CB = extractInt(data, reader); reader += 4;
-        for(unsigned int i = reader; i < reader + content_length && i < 512; i++){
+        block_length = extractInt(data, reader); reader += 4;;
+        for(int i = reader; i - reader < content_length && i < block_length; i++){
           //std::cout << i << std::endl;
           content.push_back(data.at(i));
         }
       }
+
       int CB = -1;
       int content_length = 0;
+      int block_length = 512;
       std::vector<char> content;
     };
 

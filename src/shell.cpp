@@ -52,7 +52,6 @@ int main(void) {
                 FS = new FileSystem();
                 break;
             case 2:{ // ls
-                //"walkdown" code
                 if(nrOfCommands == 2){
                   std::string path = commandArr[1];
                   int ret = FS->goToFolder(path, currBlock);
@@ -97,8 +96,14 @@ int main(void) {
                 break;
             case 9:{ // append
                   if(nrOfCommands >= 3){
-                    std::vector<char> to_append(commandArr[2].begin(), commandArr[2].end());
+                    std::string appender = FS->readFile(currBlock, commandArr[2]);
+                    //std::cout << appender << std::endl;
+                    std::vector<char> to_append(appender.begin(), appender.end());
                     to_append.push_back('\0');
+                    /*for(int i=0;i<to_append.size();i++){
+                      std::cout << to_append.at(i);
+                    }
+                    std::cout << std::endl;*/
                     FS->appendData(currBlock, commandArr[1], to_append);
                   }else{
                     std::cout << "Missing parameters" << std::endl;
