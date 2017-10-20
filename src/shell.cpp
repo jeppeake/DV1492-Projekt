@@ -89,6 +89,11 @@ int main(void) {
                 FS->saveToFile(commandArr[1]);
                 break;
             case 6: // restoreImage
+                if(FS != 0){
+                  delete FS;
+                  std::cout << "Old system deleted" << std::endl;
+                }
+                FS = new FileSystem();
                 FS->loadFromFile(commandArr[1]);
                 break;
             case 7: // rm
