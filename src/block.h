@@ -39,6 +39,10 @@ public:
     void writeBlock(const char cArr[]);     // Use with caution! Make sure that cArr is at least as large as private member block.
 
     std::string toString() const;
+
+    char* toArray() const {
+        return block;
+    }
 };
 
 #endif // BLOCK_H

@@ -96,8 +96,3 @@ std::string Block::toString() const {
         output += this->block[i];
     return output;
 }
-
-
-
-
-

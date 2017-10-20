@@ -26,13 +26,13 @@ FileSystem::FileSystem() {
   //std::cout << listDir(0) << std::endl;
 
   //std::cout << findByName(0,"File1") << std::endl;
-  createFile(0, "Garbage");
+  /*createFile(0, "Garbage");
   std::vector<char> vec;
   for(int i=0;i<100;i++){
     vec.push_back(i);
   }
   //std::cout << "vec: " << vec.size() << std::endl;
-  appendData(0, "Garbage", vec);
+  appendData(0, "Garbage", vec);*/
 
   //std::cout << "First empty: " << findEmptyBlock() << std::endl;
 
@@ -362,7 +362,9 @@ void FileSystem::saveToFile(std::string path)
   out.open(path);
   for(int i=0;i<mMemblockDevice.size();i++)
   {
-    out << mMemblockDevice.readBlock(i).toString() << '#';
+    for(int j=0;j<block_size;j++)
+      out << mMemblockDevice.readBlock(i).toArray()[j];
+    out << "#_#_#";
   }
 }
 
@@ -371,11 +373,21 @@ void FileSystem::loadFromFile(std::string path)
   std::ifstream t(path);
   std::string raw = std::string((std::istreambuf_iterator<char>(t)), std::istreambuf_iterator<char>());
   std::stringstream stream(raw);
-
+  mMemblockDevice.reset();
   int block = 0;
-  for(std::string line; std::getline(stream,line,('#')); )
+  std::string strblock;
+  std::string splitter = "#_#_#";
+  size_t position = 0;
+  while ((position = raw.find(splitter)) != std::string::npos) {
+      strblock = raw.substr(0, position);
+      raw.erase(0, position + splitter.length());
+      mMemblockDevice.writeBlock(block,strblock);
+      block++;
+  }
+  /*for(std::string line; std::getline(stream,line,char(0)); )
   {
+    std::cout << (int)line[0] << std::endl;
     mMemblockDevice.writeBlock(block,line);
     block++;
-  }
+  }*/
 }
