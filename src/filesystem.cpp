@@ -412,7 +412,7 @@ int FileSystem::loadFromFile(std::string path)
   return 1;
 }
 
-int FileSystem::removeFile(int loc, std::string name){
+int FileSystem::altremoveFile(int loc, std::string name){
   loc = findByName(loc, name);
   if(loc < 0){
     return loc;

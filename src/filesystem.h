@@ -281,7 +281,7 @@ public:
     /* Add your own member-functions if needed */
     void saveToFile(std::string path);
     int loadFromFile(std::string path);
-    int removeFile(int loc, std::string name);
+    int altremoveFile(int loc, std::string name);
 
     int copy(int fromLoc, std::string from, std::string to);
 
