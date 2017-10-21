@@ -285,7 +285,7 @@ public:
 
     int copy(int fromLoc, std::string from, std::string to);
 
-    int copyDirectory(int loc);
+    int copyDirectory(int parent, int loc, std::string name);
     int copyFile(int parent, int loc, std::string name);
 };
 
