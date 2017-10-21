@@ -264,7 +264,7 @@ public:
     int removeFile(int loc, std::string name);
 
     /* Removes a folder in the filesystem */
-    int removeFolder(int loc);
+    int removeFolder(int loc, int parent);
 
     /* Function will move the current location to a specified location in the filesystem */
     int goToFolder(std::string path, int loc);

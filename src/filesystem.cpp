@@ -135,7 +135,7 @@ int FileSystem::removeFile(int curLoc, std::string name)
   unspecified_header head(block);
   if(head.type == DIRECTORY)
   {
-    return removeFolder(loc);
+    return removeFolder(loc, curLoc);
   }
   std::vector<char> emptyVec;
   for(int c=0;c<block_size;c++)
@@ -147,9 +147,9 @@ int FileSystem::removeFile(int curLoc, std::string name)
     file_header currFile(child);
     if(currFile.name == name && currFile.type == FILE)
     {
+      int childLoc = curr.children.at(i);
       curr.children.erase(curr.children.begin() + i); //remove references to child in parent directory header
-      int childLoc = i;
-      while(childLoc != 0) //if files are larger than 1 block, step through their continued blocks until we hit the last 1.
+      while(childLoc != -1) //if files are larger than 1 block, step through their continued blocks until we hit the last 1.
       {
         mMemblockDevice.writeBlock(childLoc,emptyVec); //blank file block
         if(currFile.CB != -1)
@@ -159,7 +159,7 @@ int FileSystem::removeFile(int curLoc, std::string name)
           currFile = file_header(child);
         }
         else
-          childLoc = 0;
+          childLoc = -1;
       }
     }
   }
@@ -170,13 +170,49 @@ int FileSystem::removeFile(int curLoc, std::string name)
     vec.push_back(0);
   }
   mMemblockDevice.writeBlock(curLoc,vec);
-
   return 1;
 }
 
-int FileSystem::removeFolder(int loc)
+int FileSystem::removeFolder(int loc, int parent)
 {
+  Block block = mMemblockDevice.readBlock(loc);
+  directory_header dir(block);
 
+  for(int i = 0; i < dir.children.size(); i++)
+  {
+    Block child = mMemblockDevice.readBlock(dir.children.at(i));
+    unspecified_header ch(child);
+
+    std::string thename = ch.name;
+    removeFile(loc,thename); //remove all files in this directory, if it includes other directories we will end up here again recursively.
+  }
+
+  Block par = mMemblockDevice.readBlock(parent);
+  directory_header pd(par);
+  std::vector<char> vec;
+  for(int j = 0; j < pd.children.size(); j++) //remove from parent's child list first
+  {
+    Block pc = mMemblockDevice.readBlock(pd.children.at(j));
+    unspecified_header pch(pc);
+    if(pch.name == dir.name)
+    {
+      pd.children.erase(pd.children.begin() + j);
+    }
+  }
+
+  vec.clear();
+  pd.pack(vec);
+  for(int k = vec.size(); k < block_size; k++)
+    vec.push_back(0);
+  mMemblockDevice.writeBlock(parent,vec);
+
+  std::vector<char> emptyVec;
+  for(int c=0;c<block_size;c++)
+    emptyVec.push_back(0);
+
+  mMemblockDevice.writeBlock(loc,emptyVec);
+
+  return 1;
 }
 
 int FileSystem::goToFolder(std::string path, int loc){
@@ -233,7 +269,11 @@ std::string FileSystem::listDir(int loc){
     return ss.str();
   }
   directory_header dir(block);
+<<<<<<< HEAD
   ss << getLocation(loc);
+=======
+  s = getLocation(loc);
+>>>>>>> 995f156746119c29451120d66e24f178bdbe4af0
   for(unsigned int i=0;i<dir.children.size();i++){
     block = mMemblockDevice.readBlock(dir.children.at(i));
     unspecified_header head(block);
