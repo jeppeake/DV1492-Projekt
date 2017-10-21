@@ -280,7 +280,7 @@ public:
 
     /* Add your own member-functions if needed */
     void saveToFile(std::string path);
-    void loadFromFile(std::string path);
+    int loadFromFile(std::string path);
 };
 
 #endif // FILESYSTEM_H

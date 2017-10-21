@@ -88,14 +88,20 @@ int main(void) {
                 FS->saveToFile(commandArr[1]);
                 break;
             case 6: // restoreImage
-                if(FS != 0){
-                  delete FS;
-                  std::cout << "Old system deleted" << std::endl;
+                if(!FS->loadFromFile(commandArr[1]))
+                  std::cout << "Could not find file." << std::endl;
+                else
+                {
+                  if(FS != 0){
+                    delete FS;
+                  }
+                  FS = new FileSystem();
+                  FS->loadFromFile(commandArr[1]);
+                  std::cout << "Image restored succesfully." << std::endl;
                 }
-                FS = new FileSystem();
-                FS->loadFromFile(commandArr[1]);
                 break;
             case 7: // rm
+                
                 break;
             case 8: // cp
                 break;

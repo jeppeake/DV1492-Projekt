@@ -33,7 +33,7 @@ FileSystem::FileSystem() {
   appendData(0, "Garbage", vec);*/
 
   //std::cout << "First empty: " << findEmptyBlock() << std::endl;
-  */
+
   createFile(0, "Lorem");
   createFile(0, "Lorem2");
 
@@ -382,30 +382,29 @@ void FileSystem::saveToFile(std::string path)
   {
     for(int j=0;j<block_size;j++)
       out << mMemblockDevice.readBlock(i).toArray()[j];
-    out << "#_#_#";
   }
 }
 
-void FileSystem::loadFromFile(std::string path)
+int FileSystem::loadFromFile(std::string path)
 {
   std::ifstream t(path);
+  int r = 0;
+  if(!t.good())
+  {
+    r = -1;
+    return;
+  }
   std::string raw = std::string((std::istreambuf_iterator<char>(t)), std::istreambuf_iterator<char>());
   std::stringstream stream(raw);
   mMemblockDevice.reset();
-  int block = 0;
-  std::string strblock;
-  std::string splitter = "#_#_#";
-  size_t position = 0;
-  while ((position = raw.find(splitter)) != std::string::npos) {
-      strblock = raw.substr(0, position);
-      raw.erase(0, position + splitter.length());
-      mMemblockDevice.writeBlock(block,strblock);
-      block++;
-  }
-  /*for(std::string line; std::getline(stream,line,char(0)); )
+  for(int i=0;i<mMemblockDevice.size();i++)
   {
-    std::cout << (int)line[0] << std::endl;
-    mMemblockDevice.writeBlock(block,line);
-    block++;
-  }*/
+    std::string blockstr;
+    for(int j=0;j<block_size;j++)
+    {
+      blockstr += raw[j+(i*block_size)];
+    }
+    mMemblockDevice.writeBlock(i,blockstr);
+  }
+  return r;
 }
