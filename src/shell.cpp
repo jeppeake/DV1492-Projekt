@@ -85,9 +85,19 @@ int main(void) {
                 }
                 break;
             case 5: // createImage
+                if(nrOfCommands < 2)
+                {
+                  std::cout << "Missing parameter <real-file>" << std::endl;
+                  break;
+                }
                 FS->saveToFile(commandArr[1]);
                 break;
             case 6: // restoreImage
+                if(nrOfCommands < 2)
+                {
+                  std::cout << "Missing parameter <real-file>" << std::endl;
+                  break;
+                }
                 if(!FS->loadFromFile(commandArr[1]))
                   std::cout << "Could not find file." << std::endl;
                 else
@@ -101,7 +111,12 @@ int main(void) {
                 }
                 break;
             case 7: // rm
-
+                if(nrOfCommands < 2)
+                {
+                  std::cout << "Missing parameter <name>" << std::endl;
+                  break;
+                }
+                FS->removeFile(currBlock,commandArr[1]);
                 break;
             case 8: // cp
 
