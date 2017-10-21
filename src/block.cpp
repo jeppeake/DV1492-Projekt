@@ -65,7 +65,6 @@ int Block::writeBlock(const std::string &strBlock) {
         }
         output = 1;
     }
-
     return output;
 }
 

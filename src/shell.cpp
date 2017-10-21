@@ -101,21 +101,20 @@ int main(void) {
                 }
                 break;
             case 7: // rm
-                
+
                 break;
             case 8: // cp
+
                 break;
             case 9:{ // append
                   if(nrOfCommands >= 3){
                     std::string appender = FS->readFile(currBlock, commandArr[2]);
-                    //std::cout << appender << std::endl;
                     std::vector<char> to_append(appender.begin(), appender.end());
                     to_append.push_back('\0');
-                    /*for(int i=0;i<to_append.size();i++){
-                      std::cout << to_append.at(i);
+                    int ret = FS->appendData(currBlock, commandArr[1], to_append);
+                    if (ret < 0){
+                      std::cout << commandArr[1] << " not found." << std::endl;
                     }
-                    std::cout << std::endl;*/
-                    FS->appendData(currBlock, commandArr[1], to_append);
                   }else{
                     std::cout << "Missing parameters" << std::endl;
                   }
