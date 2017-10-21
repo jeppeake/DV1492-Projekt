@@ -145,11 +145,58 @@ int FileSystem::createFolderi(int parent, std::string name){
   return block;
 }
 
-void FileSystem::removeFile(){
+int FileSystem::removeFile(int curLoc, std::string name)
+{
+  Block currBlock =  mMemblockDevice.readBlock(curLoc);
+  directory_header curr(currBlock);
+  int loc = findByName(curLoc,name);
+  if(!loc)
+    return -1;
+  Block block = mMemblockDevice.readBlock(loc);
+  unspecified_header head(block);
+  if(head.type == DIRECTORY)
+  {
+    return removeFolder(loc);
+  }
+  std::vector<char> emptyVec;
+  for(int c=0;c<block_size;c++)
+    emptyVec.push_back(0);
 
+  for(int i=0;i<curr.children.size();i++)
+  {
+    Block child = mMemblockDevice.readBlock(curr.children.at(i));
+    file_header currFile(child);
+    if(currFile.name == name && currFile.type == FILE)
+    {
+      curr.children.erase(curr.children.begin() + i); //remove references to child in parent directory header
+      int childLoc = i;
+      while(childLoc != 0) //if files are larger than 1 block, step through their continued blocks until we hit the last 1.
+      {
+        mMemblockDevice.writeBlock(childLoc,emptyVec); //blank file block
+        if(currFile.CB != -1)
+        {
+          childLoc = currFile.CB;
+          child = mMemblockDevice.readBlock(currFile.CB);
+          currFile = file_header(child);
+        }
+        else
+          childLoc = 0;
+      }
+    }
+  }
+  std::vector<char> vec;
+  vec.clear();
+  curr.pack(vec);
+  for(int i = vec.size(); i < block_size; i++){
+    vec.push_back(0);
+  }
+  mMemblockDevice.writeBlock(curLoc,vec);
+
+  return 1;
 }
 
-void FileSystem::removeFolder(){
+int FileSystem::removeFolder(int loc)
+{
 
 }
 
@@ -210,6 +257,7 @@ std::string FileSystem::listDir(int loc){
 
   directory_header dir(block);
   s = getLocation(loc);
+  std::cout << dir.children.size() << std::endl;
   for(unsigned int i=0;i<dir.children.size();i++){
     block = mMemblockDevice.readBlock(dir.children.at(i));
     unspecified_header head(block);
@@ -388,11 +436,9 @@ void FileSystem::saveToFile(std::string path)
 int FileSystem::loadFromFile(std::string path)
 {
   std::ifstream t(path);
-  int r = 0;
   if(!t.good())
   {
-    r = -1;
-    return;
+    return -1;
   }
   std::string raw = std::string((std::istreambuf_iterator<char>(t)), std::istreambuf_iterator<char>());
   std::stringstream stream(raw);
@@ -406,5 +452,5 @@ int FileSystem::loadFromFile(std::string path)
     }
     mMemblockDevice.writeBlock(i,blockstr);
   }
-  return r;
+  return 1;
 }

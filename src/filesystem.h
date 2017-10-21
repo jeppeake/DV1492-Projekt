@@ -261,10 +261,10 @@ public:
     int createFolderi(int parent, std::string name);
 
     /* Removes a file in the filesystem */
-    void removeFile();
+    int removeFile(int loc, std::string name);
 
     /* Removes a folder in the filesystem */
-    void removeFolder();
+    int removeFolder(int loc);
 
     /* Function will move the current location to a specified location in the filesystem */
     int goToFolder(std::string path, int loc);
