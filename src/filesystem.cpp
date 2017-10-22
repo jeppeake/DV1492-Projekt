@@ -11,13 +11,13 @@
 
 FileSystem::FileSystem() {
   createFolderi(0, "root");
-  createFolderi(0, "extra");
-  createFolderi(0, "spec");
-  createFolderi(1, "extra2");
-  createFolderi(1, "extra3");
+  //createFolderi(0, "extra");
+  //createFolderi(0, "spec");
+  //createFolderi(1, "extra2");
+  //createFolderi(1, "extra3");
 
-  createFile(0, "Lorem");
-  createFile(0, "Lorem2");
+  createFile(0, "DATA_A");
+  createFile(0, "DATA_B");
 
   std::stringstream ss;
 
@@ -28,7 +28,7 @@ FileSystem::FileSystem() {
 
   std::vector<char> to_append(test.begin(), test.end());
   to_append.push_back('\0');
-  appendData(0, "Lorem", to_append);
+  appendData(0, "DATA_A", to_append);
   ss.str("");
 
   for(int i=0; i < 300; i++){
@@ -36,11 +36,11 @@ FileSystem::FileSystem() {
   }
   test = ss.str();
   std::vector<char> to_append2(test.begin(), test.end());
-  appendData(0, "Lorem2", to_append2);
+  appendData(0, "DATA_B", to_append2);
 
-  copyFile(1,0,"Lorem");
+  //copyFile(1,0,"Lorem");
   //copyDirectory(2,0,"extra");
-  std::cout << copy(0,"extra","root/spec") << std::endl;
+  //std::cout << copy(0,"extra","root/spec") << std::endl;
 }
 
 FileSystem::~FileSystem() {
@@ -249,7 +249,7 @@ int FileSystem::goToFolder(std::string path, int loc){
           }
         }
         if(!found){
-          return -1;//not found header
+          return -1;//not found error
         }
     }
     currDir = strtok(NULL,"/");
@@ -269,11 +269,7 @@ std::string FileSystem::listDir(int loc){
     return ss.str();
   }
   directory_header dir(block);
-<<<<<<< HEAD
   ss << getLocation(loc);
-=======
-  s = getLocation(loc);
->>>>>>> 995f156746119c29451120d66e24f178bdbe4af0
   for(unsigned int i=0;i<dir.children.size();i++){
     block = mMemblockDevice.readBlock(dir.children.at(i));
     unspecified_header head(block);
@@ -286,7 +282,7 @@ std::string FileSystem::listDir(int loc){
 int FileSystem::findByName(int loc, std::string name){
   Block block = mMemblockDevice.readBlock(loc);
   if(block[0] != 1){
-    return -2;
+    //return -2;
   }
   directory_header dir(block);
   for(unsigned int i = 0; i < dir.children.size(); i++){
@@ -492,16 +488,16 @@ int FileSystem::copy(int fromLoc, std::string from, std::string to){
   }
   int toLoc = goToFolder(to, fromLoc);
   if(toLoc < 0){
-    return toLoc - 2;
+    return toLoc - 1;
   }
-  std::cout << toLoc << " " << fromLoc << std::endl;
-  Block block = mMemblockDevice.readBlock(fromLoc);
+  //std::cout << toLoc << " " << fromLoc << std::endl;
+  Block block = mMemblockDevice.readBlock(checkLoc);
   if(block[0] == 1){
-    std::cout << "dir" << std::endl;
+    //std::cout << "dir" << std::endl;
     copyDirectory(toLoc,fromLoc, from);
   }
   if(block[0] == 2){
-    std::cout << "file" << std::endl;
+    //std::cout << "file" << std::endl;
     copyFile(toLoc,fromLoc,from);
   }
   return toLoc;

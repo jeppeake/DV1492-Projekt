@@ -29,7 +29,7 @@ int main(void) {
   FileSystem * FS = 0;
 
     bool bRun = true;
-
+    FS = new FileSystem();
     do {
         std::cout << user << ":" << currentDir << "$ ";
         getline(std::cin, userCommand);
@@ -73,6 +73,12 @@ int main(void) {
             case 3: // create
                 if(nrOfCommands >= 2){
                   FS->createFile(currBlock, commandArr[1]);
+                  std::cout << "Enter data: " << std::endl;
+                  std::string data;
+                  std::getline(std::cin, data);
+                  std::vector<char> to_append(data.begin(), data.end());
+                  to_append.push_back('\0');
+                  FS->appendData(currBlock, commandArr[1], to_append);
                 }else{
                   std::cout << "Missing parameter <name>" << std::endl;
                 }
@@ -118,9 +124,22 @@ int main(void) {
                 }
                 FS->removeFile(currBlock,commandArr[1]);
                 break;
-            case 8: // cp
-
-                break;
+            case 8:{ // cp
+                  if(nrOfCommands < 3){
+                    std::cout << "Missing parameters" << std::endl;
+                  }
+                  int ret = FS->copy(currBlock, commandArr[1], commandArr[2]);
+                  if(ret == -1){
+                    std::cout << commandArr[1] << " not found." << std::endl;
+                  }
+                  if(ret == -2){
+                    std::cout << commandArr[2] << " not found." << std::endl;
+                  }
+                  if(ret == -3){
+                    std::cout << commandArr[2] << " is not a file." << std::endl;
+                  }
+                  break;
+                }
             case 9:{ // append
                   if(nrOfCommands >= 3){
                     std::string appender = FS->readFile(currBlock, commandArr[2]);
