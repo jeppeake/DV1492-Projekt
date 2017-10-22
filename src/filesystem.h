@@ -80,6 +80,10 @@ private:
         //std::cout << printHeaderData() << std::endl;
       }
 
+      virtual ~header(){
+
+      };
+
       virtual int pack(std::vector<char> &vec) = 0;//returns overflow length
 
       void packHeader(){
@@ -142,6 +146,9 @@ private:
         vec = data;
         return 0;
       }
+      ~unspecified_header(){
+
+      }
       void unpack(){
         //unpackHeader();
       }
@@ -159,13 +166,16 @@ private:
         unpack();
         //std::cout << "Reading:" << std::endl << printHeaderData() << std::endl;
       }
+      ~directory_header(){
+
+      }
 
       int pack(std::vector<char> &vec){
         packHeader();
         //packing block info of all files/subfolders
         appendInt(data, children.size());
         for(unsigned int i = 0;i < children.size(); i++){
-          data.push_back(children.at(i));
+          appendInt(data, children.at(i));
         }
 
         vec = data;
@@ -175,11 +185,11 @@ private:
       void unpack(){
         int length = extractInt(data, reader); reader += 4;
         for(int i = 0; i < length; i++){
-          children.push_back(data.at(reader + i));
+          children.push_back(extractInt(data, reader)); reader += 4;
         }
       }
 
-      void addChild(char block){
+      void addChild(int block){
         children.push_back(block);
       }
 
@@ -191,7 +201,7 @@ private:
         }
       }
 
-      std::vector<char> children;
+      std::vector<int> children;
     };
 
     struct file_header : public header{
@@ -206,6 +216,9 @@ private:
         unpack();
         //std::cout << "CB: " << CB << "  Content_length: " << content_length << std::endl;
       }
+      ~file_header(){
+
+      }
 
       int pack(std::vector<char> &vec){
         packHeader();
@@ -217,7 +230,7 @@ private:
         appendInt(data, block_length);
         int overflow = 0;
         //std::cout << "Overflow (init): " << overflow << std::endl;
-        for(unsigned int i = 0; i < content.size() && data.size() < block_length; i++){
+        for(unsigned int i = 0; i < content.size() && data.size() < (unsigned int)block_length; i++){
           data.push_back(content.at(i));
           overflow++;
         }
@@ -285,7 +298,7 @@ public:
 
     int copy(int fromLoc, std::string from, std::string to);
 
-    int copyDirectory(int loc);
+    int copyDirectory(int parent, int loc, std::string name);
     int copyFile(int parent, int loc, std::string name);
 };
 
