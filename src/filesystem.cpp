@@ -11,39 +11,6 @@
 
 FileSystem::FileSystem() {
   createFolderi(0, "root");
-  //createFolderi(0, "extra");
-  //createFolderi(0, "spec");
-  //createFolderi(1, "extra2");
-  //createFolderi(1, "extra3");
-
-  createFile(0, "DATA_A");
-  createFile(0, "DATA_B");
-
-  std::stringstream ss;
-
-  for(int i=0; i < 300; i++){
-    ss << "A" << i << " ";
-  }
-  std::string test = ss.str();
-
-  std::vector<char> to_append(test.begin(), test.end());
-  to_append.push_back('\0');
-  appendData(0, "DATA_A", to_append);
-  ss.str("");
-
-  for(int i=0; i < 300; i++){
-    ss << "B" << i << " ";
-  }
-  test = ss.str();
-  std::vector<char> to_append2(test.begin(), test.end());
-  appendData(0, "DATA_B", to_append2);
-
-  //std::cout << getFileSize(1) << std::endl;
-  //std::cout << "Size: " << getSize(0, "root") << std::endl;
-
-  //copyFile(1,0,"Lorem");
-  //copyDirectory(2,0,"extra");
-
 }
 
 FileSystem::~FileSystem() {
