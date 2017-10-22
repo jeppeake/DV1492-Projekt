@@ -141,7 +141,7 @@ int FileSystem::removeFile(int curLoc, std::string name)
   for(int c=0;c<block_size;c++)
     emptyVec.push_back(0);
 
-  for(int i=0;i<curr.children.size();i++)
+  for(int i=0;(unsigned int)i<curr.children.size();i++)
   {
     Block child = mMemblockDevice.readBlock(curr.children.at(i));
     file_header currFile(child);
@@ -178,7 +178,7 @@ int FileSystem::removeFolder(int loc, int parent)
   Block block = mMemblockDevice.readBlock(loc);
   directory_header dir(block);
 
-  for(int i = 0; i < dir.children.size(); i++)
+  for(int i = 0; (unsigned int)i < dir.children.size(); i++)
   {
     Block child = mMemblockDevice.readBlock(dir.children.at(i));
     unspecified_header ch(child);
@@ -190,7 +190,7 @@ int FileSystem::removeFolder(int loc, int parent)
   Block par = mMemblockDevice.readBlock(parent);
   directory_header pd(par);
   std::vector<char> vec;
-  for(int j = 0; j < pd.children.size(); j++) //remove from parent's child list first
+  for(int j = 0; (unsigned int)j < pd.children.size(); j++) //remove from parent's child list first
   {
     Block pc = mMemblockDevice.readBlock(pd.children.at(j));
     unspecified_header pch(pc);
@@ -219,6 +219,9 @@ int FileSystem::goToFolder(std::string path, int loc){
   Block block;
   char* currDir;
   currDir = strtok(&path[0],"/");
+  if(currDir == NULL){
+    return -1;
+  }
   if(strcmp(currDir,"root") == 0){
     loc = 0;
   }
@@ -275,7 +278,6 @@ std::string FileSystem::listDir(int loc){
     unspecified_header head(block);
     ss << std::endl << "  " << head.name;
   }
-
   return ss.str();
 }
 
@@ -342,13 +344,13 @@ int FileSystem::appendData(int loc, std::string name, std::vector<char> content)
 
   int file_overflows = 0;
   int overflow = 0;
-  while(overflow != content.size()){
+  while((unsigned int)overflow != content.size()){
     Block primaryBlock = mMemblockDevice.readBlock(loc);
     file_header currentFile(primaryBlock);
     std::vector<char> vec;
     int original_size = currentFile.pack(vec);
 
-    for(int i=overflow;i<content.size();i++){
+    for(int i=overflow;(unsigned int)i<content.size();i++){
       currentFile.content.push_back(content.at(i));
     }
 
@@ -357,7 +359,7 @@ int FileSystem::appendData(int loc, std::string name, std::vector<char> content)
     overflow += new_size - original_size;
     int newLoc = -1;
 
-    if(overflow != content.size()){
+    if((unsigned int)overflow != content.size()){
       //new file
       newLoc = createFile(-1, currentFile.name);
       currentFile.CB = newLoc;
@@ -368,7 +370,7 @@ int FileSystem::appendData(int loc, std::string name, std::vector<char> content)
     for(int i=vec.size();i<block_size;i++){
       vec.push_back(0);
     }
-    int result = mMemblockDevice.writeBlock(loc, vec);
+    mMemblockDevice.writeBlock(loc, vec);
     loc = newLoc;
   }
   return 1;
@@ -508,7 +510,7 @@ int FileSystem::copyDirectory(int parent, int loc, std::string name){
   loc = findByName(loc, name);
   Block block = mMemblockDevice.readBlock(loc);
   directory_header dir(block);
-  for(int i = 0;i < dir.children.size();i++){
+  for(int i = 0;(unsigned int)i < dir.children.size();i++){
     int childLoc = dir.children.at(i);
     block = mMemblockDevice.readBlock(childLoc);
     unspecified_header head(block);
@@ -519,6 +521,7 @@ int FileSystem::copyDirectory(int parent, int loc, std::string name){
       copyFile(newLoc, loc, head.name);
     }
   }
+  return newLoc;
 }
 
 int FileSystem::copyFile(int parent, int loc, std::string name){
