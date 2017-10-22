@@ -4,6 +4,7 @@
 #include "memblockdevice.h"
 #include <sstream>
 #include <string.h>
+#include <iomanip>
 
 class FileSystem
 {
@@ -300,6 +301,9 @@ public:
 
     int copyDirectory(int parent, int loc, std::string name);
     int copyFile(int parent, int loc, std::string name);
+
+    int getSize(int loc, std::string name);
+    int getFileSize(int loc);
 };
 
 #endif // FILESYSTEM_H

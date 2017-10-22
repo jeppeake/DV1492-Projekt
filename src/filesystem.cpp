@@ -38,6 +38,9 @@ FileSystem::FileSystem() {
   std::vector<char> to_append2(test.begin(), test.end());
   appendData(0, "DATA_B", to_append2);
 
+  //std::cout << getFileSize(1) << std::endl;
+  //std::cout << "Size: " << getSize(0, "root") << std::endl;
+
   //copyFile(1,0,"Lorem");
   //copyDirectory(2,0,"extra");
   //std::cout << copy(0,"extra","root/spec") << std::endl;
@@ -276,7 +279,7 @@ std::string FileSystem::listDir(int loc){
   for(unsigned int i=0;i<dir.children.size();i++){
     block = mMemblockDevice.readBlock(dir.children.at(i));
     unspecified_header head(block);
-    ss << std::endl << "  " << head.name;
+    ss << std::endl << "    " << head.name << "  :  " << (getSize(dir.block, head.name) * block_size) << " Byte.";
   }
   return ss.str();
 }
@@ -534,4 +537,38 @@ int FileSystem::copyFile(int parent, int loc, std::string name){
   appendData(parent, name, to_append);
 
   return loc;
+}
+
+int FileSystem::getSize(int loc, std::string name){
+  int checkLoc = findByName(loc, name);
+  if(checkLoc < 0){
+    return checkLoc;
+  }
+  Block block = mMemblockDevice.readBlock(checkLoc);
+  unspecified_header head(block);
+  if(head.type == DIRECTORY){
+    directory_header dir(block);
+    int ret = 1;
+    for(int i = 0; (unsigned int)i < dir.children.size(); i++){
+      if(dir.children.at(i) != 0){
+        block = mMemblockDevice.readBlock(dir.children.at(i));
+        unspecified_header head2(block);
+        ret += getSize(checkLoc, head2.name);
+      }
+    }
+    return ret;
+  }
+  if(head.type == FILE){
+    return getFileSize(checkLoc);
+  }
+  return 0;
+}
+
+int FileSystem::getFileSize(int loc){
+  if(loc == -1){
+    return 0;
+  }
+  Block block = mMemblockDevice.readBlock(loc);
+  file_header file(block);
+  return 1 + getFileSize(file.CB);
 }
