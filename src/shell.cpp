@@ -78,7 +78,7 @@ int main(void) {
                 }
                 break;
             case 4: // cat
-                if(nrOfCommands >= 2){
+                if(nrOfCommands >= 2){ //TODO: fixa cat för undermappar
                   std::cout << FS->readFile(currBlock, commandArr[1]) << std::endl;
                 }else{
                   std::cout << "Missing parameter <name>" << std::endl;
@@ -98,17 +98,21 @@ int main(void) {
                   std::cout << "Missing parameter <real-file>" << std::endl;
                   break;
                 }
-                if(!FS->loadFromFile(commandArr[1]))
-                  std::cout << "Could not find file." << std::endl;
+                if(FS == 0)
+                {
+                  FS = new FileSystem();
+                  if(!FS->loadFromFile(commandArr[1]))
+                    {std::cout << "Could not find file." << std::endl;break;}
+                }
                 else
                 {
-                  if(FS != 0){
-                    delete FS;
-                  }
-                  FS = new FileSystem();
-                  FS->loadFromFile(commandArr[1]);
-                  std::cout << "Image restored succesfully." << std::endl;
+                  if(!FS->loadFromFile(commandArr[1]))
+                    {std::cout << "Could not find file." << std::endl; break;}
+                  else
+                    {delete FS; FS = new FileSystem();}
                 }
+                FS->loadFromFile(commandArr[1]);
+                std::cout << "Image restored succesfully." << std::endl;
                 break;
             case 7: // rm
                 if(nrOfCommands < 2)

@@ -430,7 +430,7 @@ int FileSystem::loadFromFile(std::string path)
   std::ifstream t(path);
   if(!t.good())
   {
-    return -1;
+    return 0;
   }
   std::string raw = std::string((std::istreambuf_iterator<char>(t)), std::istreambuf_iterator<char>());
   std::stringstream stream(raw);
