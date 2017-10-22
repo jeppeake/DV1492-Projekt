@@ -40,11 +40,11 @@ FileSystem::FileSystem() {
 
   //copyFile(1,0,"Lorem");
   //copyDirectory(2,0,"extra");
-  //std::cout << copy(0,"extra","root/spec") << std::endl;
+
 }
 
 FileSystem::~FileSystem() {
-  std::cout << "Filesystem destroyed" << std::endl;
+
 }
 
 std::string FileSystem::getLocation(int loc){
@@ -230,11 +230,9 @@ int FileSystem::goToFolder(std::string path, int loc){
     block = mMemblockDevice.readBlock(loc);
     unspecified_header USH(block);
     if(strcmp(currDir,"..") == 0){//move up two
-      block = mMemblockDevice.readBlock(USH.parent);
-      unspecified_header USH2(block);
-      loc = USH2.parent;
-    }else if(strcmp(currDir,".") == 0){//move up one
       loc = USH.parent;
+    }else if(strcmp(currDir,".") == 0){//move up one
+      loc = loc;
     }else{//search for child (move down)
         directory_header dir(block);
         bool found = false;

@@ -118,6 +118,8 @@ int main(void) {
                     {delete FS; FS = new FileSystem();}
                 }
                 FS->loadFromFile(commandArr[1]);
+                currBlock = 0;
+                currentDir = "root";
                 std::cout << "Image restored succesfully." << std::endl;
                 break;
             case 7: // rm
