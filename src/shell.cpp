@@ -160,14 +160,32 @@ int main(void) {
                   }
                 }
                 break;
-            case 10: // mv
+            case 10:{ // mv
                 if(nrOfCommands >= 3){
-                  int to_rename = FS->findByName(currBlock, commandArr[1]);
-                  FS->editHeader(to_rename, commandArr[2]);
+                  if(commandArr[2].find("/") != std::string::npos){//move
+                    int ret = FS->copy(currBlock, commandArr[1], commandArr[2]);
+                    if(ret == -1){
+                      std::cout << commandArr[1] << " not found." << std::endl;
+                      break;
+                    }
+                    if(ret == -2){
+                      std::cout << commandArr[2] << " not found." << std::endl;
+                      break;
+                    }
+                    if(ret == -3){
+                      std::cout << commandArr[2] << " is not a file." << std::endl;
+                      break;
+                    }
+                    FS->removeFile(currBlock, commandArr[1]);
+                  }else{//rename
+                    int to_rename = FS->findByName(currBlock, commandArr[1]);
+                    FS->editHeader(to_rename, commandArr[2]);
+                  }
                 }else{
                   std::cout << "Missing parameters" << std::endl;
                 }
                 break;
+              }
             case 11: // mkdir
                 if(nrOfCommands >= 2){
                   FS->createFolderi(currBlock, commandArr[1]);
