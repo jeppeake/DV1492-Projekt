@@ -190,7 +190,7 @@ int FileSystem::goToFolder(std::string path, int loc){
   char* currDir;
   currDir = strtok(&path[0],"/");
   if(currDir == NULL){
-    return -1;
+    return -1;//empty path error
   }
   if(strcmp(currDir,"root") == 0){
     loc = 0;
@@ -225,6 +225,7 @@ int FileSystem::goToFolder(std::string path, int loc){
     }
     currDir = strtok(NULL,"/");
   }
+  delete currDir;
   return loc;
 }
 
@@ -460,6 +461,11 @@ int FileSystem::copy(int fromLoc, std::string from, std::string to){
   if(toLoc < 0){
     return toLoc - 1;
   }
+
+  if(checkLoc == toLoc){
+    return -4;
+  }
+
   //std::cout << toLoc << " " << fromLoc << std::endl;
   Block block = mMemblockDevice.readBlock(checkLoc);
   if(block[0] == 1){

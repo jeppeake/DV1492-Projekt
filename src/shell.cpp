@@ -144,6 +144,9 @@ int main(void) {
                   if(ret == -3){
                     std::cout << commandArr[2] << " is not a file." << std::endl;
                   }
+                  if(ret == -4){
+                    std::cout << "Illegal operation!" << std::endl;
+                  }
                   break;
                 }
             case 9:{ // append
@@ -176,9 +179,25 @@ int main(void) {
                       std::cout << commandArr[2] << " is not a file." << std::endl;
                       break;
                     }
+                    if(ret == -4){
+                      std::cout << "Illegal operation!" << std::endl;
+                      break;
+                    }
                     FS->removeFile(currBlock, commandArr[1]);
                   }else{//rename
                     int to_rename = FS->findByName(currBlock, commandArr[1]);
+                    if(to_rename == -1){
+                      std::cout << commandArr[1] << " not found." << std::endl;
+                      break;
+                    }
+                    if(to_rename == 0){
+                      std::cout << "Can't operate on root!" << std::endl;
+                      break;
+                    }
+                    if(commandArr[2] == "root"){
+                      std::cout << "Illegal operation!" << std::endl;
+                      break;
+                    }
                     FS->editHeader(to_rename, commandArr[2]);
                   }
                 }else{
