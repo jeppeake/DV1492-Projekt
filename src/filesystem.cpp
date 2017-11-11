@@ -543,3 +543,118 @@ int FileSystem::getFileSize(int loc){
   file_header file(block);
   return 1 + getFileSize(file.CB);
 }
+
+int FileSystem::move(int loc, std::string from, std::string to){
+  int fromLoc = findByName(loc, from);
+  if(fromLoc < 0){
+    return fromLoc;
+  }
+  int toLoc = findDeepest(loc, to);
+  if(toLoc < 0){
+    return toLoc - 1;
+  }
+  char* currDir;
+  currDir = strtok(&to[0],"/");
+  std::string name = "";
+  while(currDir != NULL){
+    //std::cout << currDir << std::endl;
+    name = currDir;
+    currDir = strtok(NULL,"/");
+  }
+  std::cout << "Name: " << name << std::endl;
+  editHeader(fromLoc, name);
+
+  Block block = mMemblockDevice.readBlock(fromLoc);
+
+  header* head = new unspecified_header(block);
+
+  if(head->type == DIRECTORY){
+    delete head;
+    head = new directory_header(block);
+  }else if(head->type == FILE){
+    delete head;
+    head = new file_header(block);
+  }
+  std::cout << head->parent << " " << toLoc << std::endl;
+  int oldParent = head->parent;
+  head->parent = toLoc;
+
+  int parent = toLoc;
+
+  std::vector<char> vec;
+  head->pack(vec);
+  for(int i = vec.size(); i < block_size; i++){
+    vec.push_back(0);
+  }
+  mMemblockDevice.writeBlock(head->block, vec);
+
+  block = mMemblockDevice.readBlock(oldParent);
+  directory_header dir(block);
+  dir.removeChild(head->block);
+
+  vec.clear();
+  dir.pack(vec);
+  for(int i = vec.size(); i < block_size; i++){
+    vec.push_back(0);
+  }
+  mMemblockDevice.writeBlock(dir.block, vec);
+
+  block = mMemblockDevice.readBlock(toLoc);
+  directory_header dir2(block);
+  dir2.addChild(head->block);
+
+  vec.clear();
+  dir2.pack(vec);
+  for(int i = vec.size(); i < block_size; i++){
+    vec.push_back(0);
+  }
+  mMemblockDevice.writeBlock(dir2.block, vec);
+
+  delete head;
+  delete currDir;
+  return toLoc;
+}
+
+int FileSystem::findDeepest(int loc, std::string path){
+    Block block;
+    char* currDir;
+    currDir = strtok(&path[0],"/");
+    if(currDir == NULL){
+      return -1;//empty path error
+    }
+    if(strcmp(currDir,"root") == 0){
+      loc = 0;
+    }
+    while(currDir != NULL){
+      Block block;
+      block = mMemblockDevice.readBlock(loc);
+      unspecified_header USH(block);
+      if(strcmp(currDir,"..") == 0){//move up two
+        loc = USH.parent;
+      }else if(strcmp(currDir,".") == 0){//move up one
+        loc = loc;
+      }else{//search for child (move down)
+          directory_header dir(block);
+          bool found = false;
+          for(unsigned int i = 0; i < dir.children.size(); i++){
+            block = mMemblockDevice.readBlock(dir.children.at(i));
+            unspecified_header USH2(block);
+            if(USH2.name == currDir){
+              loc = dir.children.at(i);
+              found = true;
+              block = mMemblockDevice.readBlock(loc);
+              unspecified_header USH3(block);
+              if(USH3.type != DIRECTORY){
+                return -2;//not directory error
+              }
+            }
+          }
+          if(!found){
+            return loc;//not found, return deepest location
+          }
+      }
+      currDir = strtok(NULL,"/");
+    }
+    delete currDir;
+    return loc;
+}

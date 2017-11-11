@@ -164,7 +164,24 @@ int main(void) {
                 }
                 break;
             case 10:{ // mv
-                if(nrOfCommands >= 3){
+              if(nrOfCommands >= 3){
+                int ret = FS->move(currBlock, commandArr[1], commandArr[2]);
+                if(ret == -1){
+                  std::cout << commandArr[1] << " not found." << std::endl;
+                  break;
+                }
+                if(ret == -2){
+                  std::cout << "Cannot operate on empty argument" << std::endl;
+                  break;
+                }
+                if(ret == -3){
+                  std::cout << commandArr[2] << " not found." << std::endl;
+                  break;
+                }
+              }else{
+                std::cout << "Missing parameters" << std::endl;
+              }
+                /*if(nrOfCommands >= 3){
                   if(commandArr[2].find("/") != std::string::npos){//move
                     int ret = FS->copy(currBlock, commandArr[1], commandArr[2]);
                     if(ret == -1){
@@ -202,7 +219,7 @@ int main(void) {
                   }
                 }else{
                   std::cout << "Missing parameters" << std::endl;
-                }
+                }*/
                 break;
               }
             case 11: // mkdir

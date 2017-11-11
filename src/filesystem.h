@@ -304,6 +304,9 @@ public:
 
     int getSize(int loc, std::string name);
     int getFileSize(int loc);
+
+    int move(int loc, std::string from, std::string to);
+    int findDeepest(int loc, std::string path);
 };
 
 #endif // FILESYSTEM_H
