@@ -374,6 +374,7 @@ std::string FileSystem::readFile(int loc, std::string name){
     }
     if(next != -1){
       block = mMemblockDevice.readBlock(next);
+      delete file;
       file = new file_header(block);
       next = file->CB;
     }else{
@@ -561,7 +562,7 @@ int FileSystem::move(int loc, std::string from, std::string to){
     name = currDir;
     currDir = strtok(NULL,"/");
   }
-  std::cout << "Name: " << name << std::endl;
+  //std::cout << "Name: " << name << std::endl;
   editHeader(fromLoc, name);
 
   Block block = mMemblockDevice.readBlock(fromLoc);
@@ -575,11 +576,9 @@ int FileSystem::move(int loc, std::string from, std::string to){
     delete head;
     head = new file_header(block);
   }
-  std::cout << head->parent << " " << toLoc << std::endl;
+  //std::cout << head->parent << " " << toLoc << std::endl;
   int oldParent = head->parent;
   head->parent = toLoc;
-
-  int parent = toLoc;
 
   std::vector<char> vec;
   head->pack(vec);

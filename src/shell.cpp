@@ -40,8 +40,11 @@ int main(void) {
             int cIndex = findCommand(commandArr[0]);
             switch(cIndex) {
 
-			case 0: //quit
-				bRun = quit();
+			      case 0: //quit
+				        bRun = quit();
+                if(FS != 0){
+                  delete FS;
+                }
                 break;
             case 1: // format
                 std::cout << "Formatting operation starting" << std::endl;
@@ -84,7 +87,7 @@ int main(void) {
                 }
                 break;
             case 4: // cat
-                if(nrOfCommands >= 2){ //TODO: fixa cat för undermappar
+                if(nrOfCommands >= 2){
                   std::cout << FS->readFile(currBlock, commandArr[1]) << std::endl;
                 }else{
                   std::cout << "Missing parameter <name>" << std::endl;
